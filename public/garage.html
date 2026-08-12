@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Garage · नेपाल यातायात</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🔧</text></svg>">
+<link rel="stylesheet" href="/assets/garage.css">
+</head>
+<body>
+
+<section id="login" class="login" hidden>
+  <form class="login-card" id="login-form">
+    <h1>Garage</h1>
+    <p class="muted">Where the bus gets retuned.</p>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+    <button type="submit" class="primary">Open the shutter</button>
+    <p id="login-error" class="error" role="alert"></p>
+  </form>
+</section>
+
+<div id="app" hidden>
+  <header class="topbar">
+    <div>
+      <h1>Garage</h1>
+      <p id="storage-note" class="muted"></p>
+    </div>
+    <div class="topbar-actions">
+      <a class="ghost" href="/" target="_blank" rel="noopener">View the ride ↗</a>
+      <button id="logout" class="ghost" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <div class="col">
+
+      <section class="card">
+        <h2>Playlist</h2>
+        <label for="playlist">YouTube playlist link or ID</label>
+        <input id="playlist" type="text" placeholder="https://youtube.com/playlist?list=PL…" spellcheck="false">
+        <p id="playlist-hint" class="hint"></p>
+
+        <div class="row">
+          <label class="check"><input id="shuffle" type="checkbox"> Shuffle on load</label>
+        </div>
+
+        <label for="volume">Default volume — <output id="volume-out"></output></label>
+        <input id="volume" type="range" min="0" max="100" step="1">
+      </section>
+
+      <section class="card">
+        <h2>Signage</h2>
+        <label for="title">Title</label>
+        <input id="title" type="text" maxlength="140">
+        <label for="subtitle">Route line</label>
+        <input id="subtitle" type="text" maxlength="140">
+        <label for="marquee">Footer line</label>
+        <input id="marquee" type="text" maxlength="140">
+
+        <div class="row wrap">
+          <label class="check"><input id="ch-signboard" type="checkbox"> Signboard</label>
+          <label class="check"><input id="ch-tassels" type="checkbox"> Tassels</label>
+          <label class="check"><input id="ch-vignette" type="checkbox"> Vignette</label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Motion</h2>
+        <div class="segmented" role="radiogroup" aria-label="Frame transition">
+          <label><input type="radio" name="mode" value="crossfade"><span>Crossfade</span></label>
+          <label><input type="radio" name="mode" value="flipbook"><span>Flipbook</span></label>
+          <label><input type="radio" name="mode" value="cut"><span>Hard cut</span></label>
+        </div>
+
+        <label for="hold">Hold each frame — <output id="hold-out"></output></label>
+        <input id="hold" type="range" min="200" max="20000" step="100">
+
+        <label for="fade" id="fade-label">Crossfade length — <output id="fade-out"></output></label>
+        <input id="fade" type="range" min="0" max="8000" step="100">
+
+        <label class="check"><input id="kenburns" type="checkbox"> Slow zoom (Ken Burns)</label>
+      </section>
+
+    </div>
+
+    <div class="col">
+
+      <section class="card">
+        <h2>Background</h2>
+        <div class="segmented" role="radiogroup" aria-label="Background source">
+          <label><input type="radio" name="bgmode" value="frames"><span>Frames</span></label>
+          <label><input type="radio" name="bgmode" value="video"><span>Video file</span></label>
+        </div>
+
+        <div id="pane-frames">
+          <div id="drop" class="drop" tabindex="0" role="button"
+               aria-label="Add frames: drop files here or click to browse">
+            <strong>Drop images here</strong>
+            <span class="muted">or click to browse · resized in-browser before upload</span>
+          </div>
+          <input id="file" type="file" accept="image/*,video/mp4,video/webm" multiple hidden>
+
+          <div class="row">
+            <input id="frame-url" type="url" placeholder="…or paste an image URL (https://)" spellcheck="false">
+            <button id="add-url" class="ghost" type="button">Add</button>
+          </div>
+
+          <p id="upload-status" class="hint" role="status"></p>
+          <ol id="frame-list" class="frames"></ol>
+        </div>
+
+        <div id="pane-video" hidden>
+          <label for="video-url">Video URL (MP4 or WebM, https://)</label>
+          <input id="video-url" type="url" placeholder="https://…/ride.mp4" spellcheck="false">
+          <p class="hint">Plays muted on loop behind the music. Host it somewhere with range requests — Blob, R2 or S3 all work.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Preview</h2>
+        <div id="preview" class="preview"><span class="muted">nothing to show</span></div>
+        <p class="hint">Motion and frames only — the music does not play in here.</p>
+      </section>
+
+    </div>
+  </main>
+
+  <div class="savebar">
+    <span id="save-status" class="muted" role="status"></span>
+    <button id="revert" class="ghost" type="button">Revert</button>
+    <button id="save" class="primary" type="button">Save</button>
+  </div>
+</div>
+
+<script src="/assets/garage.js" type="module"></script>
+</body>
+</html>
