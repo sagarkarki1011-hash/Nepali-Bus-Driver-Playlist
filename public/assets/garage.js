@@ -539,6 +539,26 @@ function restartPreview() {
     return img;
   });
 
+  // A lone frame reverses its zoom rather than restarting it — see ride.js.
+  if (nodes.length === 1) {
+    const [near, far] = KEN_BURNS[0];
+    const only = nodes[0];
+    only.style.opacity = '1';
+    only.style.transform = state.motion.kenBurns ? near : 'scale(1.04)';
+    if (!state.motion.kenBurns) return;
+
+    let out = false;
+    const breathe = () => {
+      const hold = Math.max(state.motion.holdMs, 200);
+      out = !out;
+      only.style.transition = `transform ${hold}ms ease-in-out`;
+      only.style.transform = out ? far : near;
+      previewTimer = setTimeout(breathe, hold);
+    };
+    previewTimer = setTimeout(breathe, 50);
+    return;
+  }
+
   let index = -1;
   const step = () => {
     const fade = state.motion.mode === 'crossfade' ? state.motion.fadeMs : 0;

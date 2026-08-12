@@ -7,10 +7,7 @@ const stage = {
 };
 
 const ui = {
-  gate: $('#gate'),
-  board: $('#board'),
-  gateTitle: $('#gate-title'),
-  gateSub: $('#gate-subtitle'),
+  hint: $('#sound-hint'),
   signboard: $('#signboard'),
   sbTitle: $('#sb-title'),
   sbSub: $('#sb-subtitle'),
@@ -33,7 +30,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let config = null;
 let player = null;
 let playerReady = false;
-let boarded = false;
+let unlocked = false; // audible, as opposed to merely playing muted
 
 /* ---------------------------------------------------------------- toast */
 
@@ -57,12 +54,14 @@ const KEN_BURNS = [
 let slides = [];
 let slideIndex = -1;
 let slideTimer = null;
+let pingPong = false;
 
 function buildStage() {
   clearTimeout(slideTimer);
   stage.frames.textContent = '';
   slides = [];
   slideIndex = -1;
+  pingPong = false;
 
   stage.vignette.classList.toggle('on', Boolean(config.chrome.vignette));
 
@@ -70,8 +69,8 @@ function buildStage() {
     stage.video.src = config.video.url;
     stage.video.classList.add('on');
     stage.video.play().catch(() => {
-      /* Muted loops are allowed to autoplay; if the browser still declines, the
-         first tap on the gate covers it. */
+      /* Muted loops are allowed to autoplay; if the browser still declines,
+         the first click anywhere covers it. */
     });
     return;
   }
@@ -100,6 +99,29 @@ function showSlide(index) {
   const { holdMs, fadeMs, kenBurns } = config.motion;
   const fade = config.motion.mode === 'crossfade' ? fadeMs : 0;
   const hold = Math.max(holdMs, 200);
+  const drift = kenBurns && !reduceMotion;
+
+  // One frame has nothing to cut to, so it breathes in and out instead. Restarting
+  // the zoom from the top each cycle would snap; reversing it never does.
+  if (slides.length === 1) {
+    const only = slides[0];
+    const [near, far] = KEN_BURNS[0];
+
+    if (slideIndex < 0) {
+      slideIndex = 0;
+      only.style.transition = 'none';
+      only.style.opacity = '1';
+      only.style.transform = drift ? near : 'scale(1.04)';
+      void only.offsetWidth;
+      if (!drift) return; // nothing left to animate
+    }
+
+    pingPong = !pingPong;
+    only.style.transition = `transform ${hold}ms ease-in-out`;
+    only.style.transform = pingPong ? far : near;
+    slideTimer = setTimeout(() => showSlide(0), hold);
+    return;
+  }
 
   const current = slides[index];
   const previous = slideIndex >= 0 && slideIndex !== index ? slides[slideIndex] : null;
@@ -111,12 +133,12 @@ function showSlide(index) {
   const [from, to] = KEN_BURNS[index % KEN_BURNS.length];
 
   current.style.transition = 'none';
-  current.style.transform = kenBurns && !reduceMotion ? from : 'scale(1.04)';
+  current.style.transform = drift ? from : 'scale(1.04)';
   void current.offsetWidth; // commit the reset before animating away from it
 
   current.style.transition = `opacity ${fade}ms linear, transform ${hold + fade}ms linear`;
   current.style.opacity = '1';
-  current.style.transform = kenBurns && !reduceMotion ? to : 'scale(1.04)';
+  current.style.transform = drift ? to : 'scale(1.04)';
   current.style.zIndex = '1';
 
   if (previous) {
@@ -213,6 +235,7 @@ function onPlayerReady() {
   playerReady = true;
   player.setVolume(Number(ui.volume.value));
   if (config.shuffle) player.setShuffle(true);
+  startMusic();
 }
 
 let titleTimer = null;
@@ -247,23 +270,48 @@ function onPlayerError(event) {
   toast(`${why} Fix it in <a href="/garage">the garage</a>.`, 0);
 }
 
+function play() {
+  if (config.shuffle) {
+    const list = player.getPlaylist();
+    if (list?.length) {
+      player.setShuffle(true);
+      player.playVideoAt(Math.floor(Math.random() * list.length));
+      return;
+    }
+  }
+  player.playVideo();
+}
+
+/**
+ * No door to open: try to start audibly, and if the browser says no, roll the
+ * playlist muted and wait for the first click anywhere to turn the sound on.
+ * Chrome often permits unmuted autoplay on a site the visitor has been to before,
+ * so returning listeners never see the hint at all.
+ */
 function startMusic() {
   if (!playerReady || !config.playlistId) return;
   try {
     player.unMute();
     player.setVolume(Number(ui.volume.value));
-    if (config.shuffle) {
-      const list = player.getPlaylist();
-      if (list?.length) {
-        player.setShuffle(true);
-        player.playVideoAt(Math.floor(Math.random() * list.length));
-        return;
-      }
-    }
-    player.playVideo();
+    play();
   } catch (err) {
     console.error(err);
   }
+
+  setTimeout(() => {
+    const blocked = player.getPlayerState() !== YT.PlayerState.PLAYING || player.isMuted();
+    if (blocked) {
+      try {
+        player.mute();
+        play();
+      } catch {
+        /* nothing more to try until a gesture arrives */
+      }
+      armUnlock();
+    } else {
+      unlocked = true;
+    }
+  }, 1400);
 
   // A truncated or private playlist ID never resolves — say so rather than sit silent.
   setTimeout(() => {
@@ -277,27 +325,33 @@ function startMusic() {
   }, 7000);
 }
 
-/* -------------------------------------------------------------- boarding */
+/* --------------------------------------------------------------- unlock */
 
-function board() {
-  if (boarded) return;
-  boarded = true;
+const GESTURES = ['pointerdown', 'keydown', 'touchstart'];
 
-  ui.gate.classList.add('gone');
-  ui.dash.hidden = false;
-  if (config.chrome.signboard) {
-    ui.signboard.hidden = false;
-    requestAnimationFrame(() => ui.signboard.classList.add('on'));
+function armUnlock() {
+  if (unlocked) return;
+  ui.hint.hidden = false;
+  for (const event of GESTURES) {
+    window.addEventListener(event, unlock, { once: true, passive: true });
   }
-  ui.tassels.classList.toggle('on', Boolean(config.chrome.tassels));
+}
 
-  startRoad();
-  if (stage.video.src) stage.video.play().catch(() => {});
-  startMusic();
-  resetIdle();
+function unlock() {
+  if (unlocked) return;
+  unlocked = true;
 
-  if (!config.playlistId) {
-    toast('No playlist set yet. Add one in <a href="/garage">the garage</a>.', 0);
+  for (const event of GESTURES) window.removeEventListener(event, unlock);
+
+  ui.hint.classList.add('gone');
+  setTimeout(() => { ui.hint.hidden = true; }, 700);
+
+  try {
+    player.unMute();
+    player.setVolume(Number(ui.volume.value));
+    if (player.getPlayerState() !== YT.PlayerState.PLAYING) play();
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -308,9 +362,9 @@ function resetIdle() {
   document.body.classList.remove('idle');
   clearTimeout(idleTimer);
   idleTimer = setTimeout(function tick() {
-    if (!boarded) return;
-    // Don't hide the dashboard out from under a message — check back instead of giving up.
-    if (ui.toast.classList.contains('on')) {
+    // Don't hide the dashboard out from under a message, or while the visitor
+    // still needs to be told where the sound is.
+    if (ui.toast.classList.contains('on') || (!unlocked && !ui.hint.hidden)) {
       idleTimer = setTimeout(tick, 1000);
       return;
     }
@@ -326,7 +380,7 @@ function togglePlay() {
 }
 
 function wireControls() {
-  ui.board.addEventListener('click', board);
+  ui.hint.addEventListener('click', unlock);
 
   ui.toggle.addEventListener('click', togglePlay);
   ui.prev.addEventListener('click', () => playerReady && player.previousVideo());
@@ -361,13 +415,6 @@ function wireControls() {
   window.addEventListener('keydown', (e) => {
     if (e.target.matches('input, textarea')) return;
 
-    if (!boarded && (e.code === 'Space' || e.code === 'Enter')) {
-      e.preventDefault();
-      board();
-      return;
-    }
-    if (!boarded) return;
-
     switch (e.code) {
       case 'Space': e.preventDefault(); togglePlay(); break;
       case 'ArrowRight': playerReady && player.nextVideo(); break;
@@ -392,8 +439,6 @@ function nudgeVolume(delta) {
 
 function paintText() {
   document.title = config.title || 'नेपाल यातायात';
-  ui.gateTitle.textContent = config.title;
-  ui.gateSub.textContent = config.subtitle;
   ui.sbTitle.textContent = config.title;
   ui.sbSub.textContent = config.subtitle;
   ui.marquee.textContent = config.marquee;
@@ -422,9 +467,23 @@ async function boot() {
   buildStage();
   wireControls();
 
+  // The ride starts the moment the page does — there is no door.
+  ui.signboard.hidden = !config.chrome.signboard;
+  if (config.chrome.signboard) requestAnimationFrame(() => ui.signboard.classList.add('on'));
+  ui.tassels.classList.toggle('on', Boolean(config.chrome.tassels));
+
+  startRoad();
+  if (stage.video.src) stage.video.play().catch(() => {});
+  resetIdle();
+
+  if (!config.playlistId) {
+    toast('No playlist set yet. Add one in <a href="/garage">the garage</a>.', 0);
+    return;
+  }
+
   try {
     await loadYouTubeApi();
-    createPlayer();
+    createPlayer(); // onReady starts the music
   } catch {
     toast('YouTube could not be reached, so there is no sound — the road still rolls.', 9000);
   }

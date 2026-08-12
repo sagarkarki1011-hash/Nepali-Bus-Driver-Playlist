@@ -162,78 +162,44 @@ body.idle { cursor: none; }
 }
 #yt-host iframe { width: 100%; height: 100%; border: 0; }
 
-/* ---------- boarding gate ---------- */
+/* ---------- sound hint ---------- */
+/* Only appears when the browser refused unmuted autoplay. Any click clears it. */
 
-#gate {
+#sound-hint {
   position: fixed;
-  inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: radial-gradient(90% 70% at 50% 45%, rgba(24, 15, 7, 0.82), rgba(6, 4, 2, 0.97));
+  left: 50%;
+  bottom: 132px;
+  z-index: 15;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 999px;
+  background: rgba(12, 8, 4, 0.72);
   backdrop-filter: blur(6px);
-  transition: opacity 900ms ease, visibility 900ms;
-}
-#gate.gone { opacity: 0; visibility: hidden; pointer-events: none; }
-
-.gate-card { text-align: center; max-width: 34rem; }
-
-.gate-eyebrow {
-  margin: 0 0 18px;
-  font-size: clamp(0.6rem, 1.6vw, 0.75rem);
-  letter-spacing: 0.5em;
-  text-transform: uppercase;
-  color: var(--brass);
-  opacity: 0.85;
-}
-
-#gate-title {
-  margin: 0;
-  font-size: clamp(2.1rem, 9vw, 5rem);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: 0.02em;
-  color: var(--cream);
-  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.8);
-}
-
-.gate-sub {
-  margin: 14px 0 0;
-  font-size: clamp(0.75rem, 2vw, 0.95rem);
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
-}
-
-#board {
-  margin-top: 42px;
-  padding: 16px 44px;
-  display: inline-flex;
-  flex-direction: column;
-  gap: 4px;
-  border: 1px solid rgba(242, 229, 201, 0.35);
-  border-radius: 2px;
-  background: transparent;
   color: var(--cream);
   font: inherit;
-  cursor: pointer;
-  transition: background 260ms ease, border-color 260ms ease, transform 160ms ease;
-}
-#board:hover, #board:focus-visible {
-  background: rgba(242, 229, 201, 0.1);
-  border-color: var(--brass);
-}
-#board:active { transform: translateY(1px); }
-.board-ne { font-size: clamp(1.15rem, 3.4vw, 1.6rem); font-weight: 700; }
-.board-en { font-size: 0.66rem; letter-spacing: 0.34em; text-transform: uppercase; color: var(--cream-dim); }
-
-.gate-note {
-  margin: 26px 0 0;
-  font-size: 0.66rem;
-  letter-spacing: 0.24em;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(203, 187, 152, 0.55);
+  cursor: pointer;
+  animation: breathe 3.4s ease-in-out infinite;
+  transition: opacity 600ms ease, visibility 600ms;
+}
+#sound-hint svg { width: 17px; height: 17px; fill: var(--brass); flex: none; }
+#sound-hint.gone { opacity: 0; visibility: hidden; }
+#sound-hint:hover { border-color: var(--brass); }
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.62; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 620px) {
+  #sound-hint { font-size: 0.6rem; padding: 9px 15px; bottom: 156px; }
+  #sound-hint span { max-width: 62vw; }
 }
 
 /* ---------- dashboard ---------- */
