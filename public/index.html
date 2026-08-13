@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#120c06">
-<title>नेपाल यातायात</title>
-<meta name="description" content="A long bus ride through the hills, with music.">
+<meta name="theme-color" content="#100d0b">
+<title>बस ड्राइवर</title>
+<meta name="description" content="राति भरि राजमार्गमा — नेपाली बस ड्राइभरको प्लेलिस्ट।">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🚌</text></svg>">
 <link rel="preconnect" href="https://www.youtube.com">
 <link rel="preconnect" href="https://i.ytimg.com">
@@ -13,76 +13,118 @@
 </head>
 <body>
 
-<!-- The road. Frames and video both live here; only one is ever lit. -->
+<!-- The road behind everything -->
 <div id="stage" aria-hidden="true">
+  <div id="bgblur"></div>
   <div id="frames"></div>
-  <video id="bgvideo" muted playsinline loop preload="none"></video>
+  <video id="bgvideo" muted playsinline loop preload="auto"></video>
   <div id="grain"></div>
+  <div id="scrim"></div>
   <div id="vignette"></div>
 </div>
 
-<div id="tassels" aria-hidden="true">
-  <div class="tassel-rail left"></div>
-  <div class="tassel-rail right"></div>
+<div id="shell">
+
+  <!-- ── header ─────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 16V6a2 2 0 012-2h12a2 2 0 012 2v10h1v2h-2v1a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H8v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1H3v-2zM6 7v4h5V7zm7 0v4h5V7zM7 13.2a1.3 1.3 0 100 2.6 1.3 1.3 0 000-2.6zm10 0a1.3 1.3 0 100 2.6 1.3 1.3 0 000-2.6z"/></svg>
+      </span>
+      <span class="brand-copy">
+        <strong id="brand-title">बस ड्राइवर</strong>
+        <span id="brand-route" class="route"></span>
+      </span>
+    </div>
+
+    <div class="status">
+      <p class="clock"><span id="clock">--:--</span><span id="clock-sec" class="sec">--</span></p>
+      <p class="aboard">
+        <i class="dot" aria-hidden="true"></i>
+        <strong id="aboard-n">—</strong>
+        <span class="aboard-label">गीत</span>
+      </p>
+    </div>
+  </header>
+
+  <!-- ── middle ─────────────────────────────────────────────── -->
+  <main class="hero">
+    <p class="eyebrow" id="eyebrow">नन-स्टप</p>
+    <h1 class="hero-title" id="hero-title">बस ड्राइवर</h1>
+    <p class="hero-rule"><span id="hero-sub">राति भरि राजमार्गमा</span></p>
+
+    <button class="pill" id="pill" type="button">
+      <span class="pill-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm13.5 2a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4zM14 2.2v2.1a7.8 7.8 0 010 15.4v2.1a9.9 9.9 0 000-19.6z"/></svg>
+      </span>
+      <span class="pill-copy">
+        <strong id="pill-main">हर्न ओके प्लिज</strong>
+        <small id="pill-sub">HORN OK PLEASEEEE</small>
+      </span>
+    </button>
+  </main>
+
+  <!-- ── player ─────────────────────────────────────────────── -->
+  <footer class="player">
+    <button class="mascot" id="mascot" type="button" aria-label="हर्न बजाउनुहोस्">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M11 16 L13.5 8 L18.5 14.5 Z" fill="#c8783e"/>
+        <path d="M29 16 L26.5 8 L21.5 14.5 Z" fill="#c8783e"/>
+        <circle cx="20" cy="23" r="11" fill="#d98a4a"/>
+        <circle cx="16.2" cy="22.5" r="1.7" fill="#22190f"/>
+        <circle cx="23.8" cy="22.5" r="1.7" fill="#22190f"/>
+        <path d="M18 27.4q2 1.9 4 0" stroke="#22190f" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <path d="M10 15.5a10 6.5 0 0120 0z" fill="#3d5486"/>
+        <rect x="7.5" y="15" width="25" height="3.4" rx="1.7" fill="#2a3a63"/>
+      </svg>
+    </button>
+
+    <div class="player-grid">
+      <div class="np">
+        <span id="art" class="art" aria-hidden="true"></span>
+        <span class="np-copy">
+          <strong id="track" class="np-title">प्लेलिस्ट पर्खिँदै…</strong>
+          <span id="artist" class="np-artist"></span>
+        </span>
+      </div>
+
+      <div class="seek">
+        <span id="t-cur" class="t">0:00</span>
+        <input id="seek" class="seek-bar" type="range" min="0" max="1000" value="0" step="1"
+               aria-label="गीतको स्थान">
+        <span id="t-dur" class="t">0:00</span>
+      </div>
+
+      <div class="ctrls">
+        <button id="prev" type="button" aria-label="अघिल्लो गीत">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14L8 12zM6 5h2v14H6z"/></svg>
+        </button>
+        <button id="toggle" type="button" class="play" aria-label="बजाउनुहोस् वा रोक्नुहोस्">
+          <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
+          <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
+        </button>
+        <button id="next" type="button" aria-label="अर्को गीत">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5l10 7-10 7zM16 5h2v14h-2z"/></svg>
+        </button>
+
+        <span class="ctrls-gap"></span>
+
+        <button id="shuffle" type="button" aria-pressed="false" aria-label="बेतरतिब">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l4 4-4 4V8h-2.5l-2 3-1.2-1.8L13.4 6H17zM3 6h4.6l7 10H17v-3l4 4-4 4v-3h-3.4l-7-10H3zm0 12h4.6l2-2.9 1.2 1.8-2.2 3.1H3z"/></svg>
+        </button>
+        <button id="fs" type="button" aria-label="पूरा स्क्रिन">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5v2H6v3zm11-5h5v5h-2V6h-3zM4 15h2v3h3v2H4zm14 0h2v5h-5v-2h3z"/></svg>
+        </button>
+      </div>
+    </div>
+  </footer>
+
 </div>
 
-<header id="signboard">
-  <div class="plate">
-    <span class="motif" aria-hidden="true">✿</span>
-    <h1 id="sb-title"></h1>
-    <span class="motif" aria-hidden="true">✿</span>
-  </div>
-  <p id="sb-subtitle"></p>
-</header>
-
-<!-- Parked in the viewport but invisible: YouTube stops audio on a hidden iframe. -->
-<div id="yt-host" aria-hidden="true"><div id="yt-player"></div></div>
-
-<button id="sound-hint" type="button" hidden>
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l4 3V7L7 10zm12.5 2a3.5 3.5 0 00-2-3.16v6.32A3.5 3.5 0 0016.5 12z"/></svg>
-  <span>ध्वनिका लागि क्लिक गर्नुहोस् · click anywhere for sound</span>
-</button>
-
-<footer id="dash">
-  <div class="dash-inner">
-    <div class="now">
-      <span class="now-label">बज्दै छ</span>
-      <span id="track" class="now-track">…</span>
-    </div>
-
-    <div class="transport">
-      <button id="prev" type="button" title="Previous (←)" aria-label="Previous track">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14L8 12zM6 5h2v14H6z"/></svg>
-      </button>
-      <button id="toggle" type="button" class="primary" title="Play / pause (space)" aria-label="Play or pause">
-        <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
-        <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
-      </button>
-      <button id="next" type="button" title="Next (→)" aria-label="Next track">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5l10 7-10 7zM16 5h2v14h-2z"/></svg>
-      </button>
-      <button id="horn" type="button" class="horn" title="Horn (H)" aria-label="Sound the horn">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4h3l5 4V6L6 10zm12.5 2a3.5 3.5 0 00-2-3.16v6.32A3.5 3.5 0 0015.5 12zm-2 -7.4v2.06A5.5 5.5 0 0117.5 12a5.5 5.5 0 01-4 5.34v2.06A7.5 7.5 0 0019.5 12a7.5 7.5 0 01-6-7.4z"/></svg>
-      </button>
-    </div>
-
-    <div class="knobs">
-      <button id="shuffle" type="button" title="Shuffle (S)" aria-pressed="false" aria-label="Shuffle">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l4 4-4 4V8h-2.5l-2 3-1.2-1.8L13.4 6H17zM3 6h4.6l7 10H17v-3l4 4-4 4v-3h-3.4l-7-10H3zm0 12h4.6l2-2.9 1.2 1.8-2.2 3.1H3z"/></svg>
-      </button>
-      <label class="vol" title="Volume">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l4 3V7L7 10z"/></svg>
-        <input id="volume" type="range" min="0" max="100" step="1" aria-label="Volume">
-      </label>
-      <button id="fs" type="button" title="Fullscreen (F)" aria-label="Toggle fullscreen">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5v2H6v3zm11-5h5v5h-2V6h-3zM4 15h2v3h3v2H4zm14 0h2v5h-5v-2h3z"/></svg>
-      </button>
-    </div>
-  </div>
-  <p id="marquee"></p>
-</footer>
-
 <div id="toast" role="status" aria-live="polite"></div>
+
+<!-- Kept in the viewport at zero opacity: YouTube stops audio on a hidden iframe. -->
+<div id="yt-host" aria-hidden="true"><div id="yt-player"></div></div>
 
 <script src="/assets/ride.js" type="module"></script>
 </body>
