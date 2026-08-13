@@ -10,7 +10,7 @@ export const DEFAULT_CONFIG = {
   frames: [
     { url: '/frames/nepal-yatayat.png%20.PNG', alt: 'From the cab, somewhere above the valley' }
   ],
-  video: { url: '', enabled: false },
+    video: { url: '/frames/ride.mp4', enabled: true },
   motion: {
     mode: 'crossfade', // crossfade | flipbook | cut
     holdMs: 12000, // a lone frame reverses its zoom over this, so slower reads better
