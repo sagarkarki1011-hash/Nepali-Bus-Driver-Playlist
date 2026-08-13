@@ -8,7 +8,7 @@ export const DEFAULT_CONFIG = {
   shuffle: true,
   volume: 70,
   frames: [
-    { url: '/frames/nepal-yatayat.jpg', alt: 'From the cab, somewhere above the valley' }
+    { url: '/frames/nepal-yatayat.png%20.PNG', alt: 'From the cab, somewhere above the valley' }
   ],
   video: { url: '', enabled: false },
   motion: {
