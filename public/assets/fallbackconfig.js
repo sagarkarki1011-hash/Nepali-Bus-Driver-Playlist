@@ -2,7 +2,8 @@
 // config, and the ride imports it directly if /api/config is unreachable.
 export const DEFAULT_CONFIG = {
   title: 'बस ड्राइवर',
-  subtitle: 'म १ प · मोरङ — काठमाडौँ',
+  subtitle: 'Morang — Kathmandu',
+  plate: 'MA 1 KHA 6969',
   marquee: 'राति भरि राजमार्गमा',
   playlistId: 'PLJDMn5uExVKg',
   shuffle: true,

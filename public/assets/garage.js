@@ -21,6 +21,7 @@ const el = {
   title: $('#title'),
   subtitle: $('#subtitle'),
   marquee: $('#marquee'),
+  plate: $('#plate'),
   chVignette: $('#ch-vignette'),
   chFill: $('#ch-fill'),
 
@@ -154,6 +155,7 @@ function paint() {
   el.title.value = state.title;
   el.subtitle.value = state.subtitle;
   el.marquee.value = state.marquee;
+  el.plate.value = state.plate || '';
   el.chVignette.checked = state.chrome.vignette;
   el.chFill.checked = state.chrome.fillScreen;
 
@@ -210,7 +212,7 @@ function bindInputs() {
     refreshDirty();
   });
 
-  for (const [node, key] of [[el.title, 'title'], [el.subtitle, 'subtitle'], [el.marquee, 'marquee']]) {
+  for (const [node, key] of [[el.title, 'title'], [el.subtitle, 'subtitle'], [el.marquee, 'marquee'], [el.plate, 'plate']]) {
     node.addEventListener('input', () => set(() => (state[key] = node.value)));
   }
 

@@ -13,6 +13,10 @@ const ui = {
   clock: $('#clock'),
   clockSec: $('#clock-sec'),
   aboardN: $('#aboard-n'),
+  plate: $('#plate'),
+  dateBs: $('#date-bs'),
+  dateAd: $('#date-ad'),
+  hornSpot: $('#horn-spot'),
 
   eyebrow: $('#eyebrow'),
   heroTitle: $('#hero-title'),
@@ -60,8 +64,61 @@ function tickClock() {
   const now = new Date();
   const hh = String(now.getHours()).padStart(2, '0');
   const mm = String(now.getMinutes()).padStart(2, '0');
-  ui.clock.textContent = ne(`${hh}:${mm}`);
-  ui.clockSec.textContent = ne(String(now.getSeconds()).padStart(2, '0'));
+  ui.clock.textContent = `${hh}:${mm}`;
+  ui.clockSec.textContent = String(now.getSeconds()).padStart(2, '0');
+}
+
+/* ─────────────────────────────────────────────── the date */
+
+// Bikram Sambat has no fixed month lengths, so it needs a lookup table.
+// ANCHOR is Baisakh 1 of the first listed year; verify a reading against a
+// printed patro before trusting it, and correct the anchor if it is off.
+const BS_ANCHOR = { bsYear: 2083, ad: Date.UTC(2026, 3, 14) };
+const BS_MONTHS = {
+  2083: [31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 29, 31],
+  2084: [31, 31, 32, 31, 31, 30, 30, 30, 29, 30, 29, 31],
+  2085: [31, 32, 31, 32, 30, 31, 30, 30, 29, 30, 29, 31],
+  2086: [30, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31],
+  2087: [31, 31, 32, 31, 31, 31, 30, 30, 29, 30, 29, 31],
+  2088: [30, 31, 32, 32, 30, 31, 30, 30, 29, 30, 29, 31],
+  2089: [30, 31, 32, 32, 31, 30, 30, 30, 29, 30, 29, 31],
+  2090: [30, 31, 32, 32, 31, 30, 30, 30, 29, 30, 29, 31]
+};
+const BS_MONTH_NAMES = ['बैशाख', 'जेठ', 'असार', 'साउन', 'भदौ', 'असोज',
+                        'कार्तिक', 'मंसिर', 'पुष', 'माघ', 'फागुन', 'चैत'];
+
+/** Returns a Devanagari BS date, or '' when the date falls outside the table. */
+function bikramSambat(date) {
+  const today = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  let remaining = Math.floor((today - BS_ANCHOR.ad) / 86400000);
+  if (remaining < 0) return '';
+
+  let year = BS_ANCHOR.bsYear;
+  while (BS_MONTHS[year]) {
+    const yearLength = BS_MONTHS[year].reduce((a, b) => a + b, 0);
+    if (remaining < yearLength) break;
+    remaining -= yearLength;
+    year += 1;
+  }
+  const months = BS_MONTHS[year];
+  if (!months) return '';
+
+  let month = 0;
+  while (remaining >= months[month]) {
+    remaining -= months[month];
+    month += 1;
+  }
+  return `${BS_MONTH_NAMES[month]} ${ne(remaining + 1)}, ${ne(year)}`;
+}
+
+function paintDate() {
+  const now = new Date();
+  const bs = bikramSambat(now);
+  ui.dateBs.textContent = bs;
+  ui.dateBs.hidden = !bs;
+  ui.dateAd.textContent = now.toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric'
+  });
 }
 
 /* ─────────────────────────────────────────────── toast */
@@ -191,9 +248,11 @@ function showSlide(index) {
 
 let audioCtx = null;
 function honk() {
-  ui.mascot.classList.remove('blow');
-  void ui.mascot.offsetWidth;
-  ui.mascot.classList.add('blow');
+  for (const node of [ui.mascot, ui.hornSpot]) {
+    node.classList.remove('blow');
+    void node.offsetWidth;
+    node.classList.add('blow');
+  }
 
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
@@ -226,6 +285,50 @@ function honk() {
   } catch {
     /* No Web Audio, no horn. The animation still plays. */
   }
+}
+
+/* ─────────────────────────────────────────────── horn over the corner */
+
+/**
+ * Parks the horn on the bottom-right corner of the footage itself — which is
+ * where the generator burns its logo in — rather than the corner of the screen.
+ * With object-fit the rendered box rarely matches the element box, so measure it.
+ */
+function placeHorn() {
+  const media = config.video.enabled && config.video.url ? stage.video : slides[0];
+  if (!media) return;
+
+  // Assume widescreen until the real dimensions arrive, so the horn is never
+  // simply missing — placeHorn runs again on loadedmetadata with exact numbers.
+  const natW = media.videoWidth || media.naturalWidth || 16;
+  const natH = media.videoHeight || media.naturalHeight || 9;
+
+  const cw = window.innerWidth;
+  const ch = window.innerHeight;
+  const portrait = matchMedia('(max-aspect-ratio: 1/1)').matches;
+  const contained = portrait && !document.body.classList.contains('fill-screen');
+  const scale = contained
+    ? Math.min(cw / natW, ch / natH)
+    : Math.max(cw / natW, ch / natH);
+
+  const gapRight = Math.max(0, (cw - natW * scale) / 2);
+  const gapBottom = Math.max(0, (ch - natH * scale) / 2);
+
+  // Never let it slide under the player bar.
+  const player = document.querySelector('.player').getBoundingClientRect();
+  const floor = Math.max(0, ch - player.top) + 8;
+
+  ui.hornSpot.style.right = `${Math.round(gapRight + 10)}px`;
+  ui.hornSpot.style.bottom = `${Math.round(Math.max(gapBottom + 10, floor))}px`;
+  ui.hornSpot.hidden = false;
+}
+
+function watchHornSpot() {
+  stage.video.addEventListener('loadedmetadata', placeHorn);
+  for (const img of slides) img.addEventListener('load', placeHorn);
+  window.addEventListener('resize', placeHorn, { passive: true });
+  window.addEventListener('orientationchange', () => setTimeout(placeHorn, 250));
+  placeHorn();
 }
 
 /* ─────────────────────────────────────────────── the pill */
@@ -261,6 +364,36 @@ function askForSound() {
   ui.pill.classList.add('calling');
   ui.pillMain.textContent = 'आवाजका लागि थिच्नुहोस्';
   ui.pillSub.textContent = 'TAP ANYWHERE FOR SOUND';
+}
+
+/* ─────────────────────────────────────────────── who else is listening */
+
+function sessionId() {
+  try {
+    let id = sessionStorage.getItem('nbdp:sid');
+    if (!id) {
+      id = (crypto.randomUUID?.() || String(Math.random()).slice(2) + Date.now()).replace(/-/g, '');
+      sessionStorage.setItem('nbdp:sid', id);
+    }
+    return id;
+  } catch {
+    return String(Math.random()).slice(2) + Date.now();
+  }
+}
+
+async function pingPresence() {
+  try {
+    const res = await fetch('/api/presence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: sessionId() })
+    });
+    const body = await res.json();
+    // Without a store there is no cross-visitor count; you are the one we know of.
+    ui.aboardN.textContent = ne(body.live && body.count ? body.count : 1);
+  } catch {
+    ui.aboardN.textContent = ne(1);
+  }
 }
 
 /* ─────────────────────────────────────────────── youtube */
@@ -326,14 +459,6 @@ function refreshNowPlaying() {
       ui.art.style.backgroundImage = `url("https://i.ytimg.com/vi/${data.video_id}/mqdefault.jpg")`;
     }
 
-    const list = player?.getPlaylist?.();
-    if (list?.length) {
-      ui.aboardN.textContent = ne(list.length);
-      const at = player.getPlaylistIndex?.();
-      ui.eyebrow.textContent = Number.isInteger(at) && at >= 0
-        ? `गीत ${ne(at + 1)} / ${ne(list.length)} · नन-स्टप`
-        : `${ne(list.length)} गीत · नन-स्टप`;
-    }
   } catch {
     /* the player throws until a video is bound */
   }
@@ -480,6 +605,7 @@ function wireControls() {
     paintSlogan();
   });
   ui.mascot.addEventListener('click', honk);
+  ui.hornSpot.addEventListener('click', honk);
 
   ui.toggle.addEventListener('click', togglePlay);
   ui.prev.addEventListener('click', () => playerReady && player.previousVideo());
@@ -536,6 +662,8 @@ function paintText() {
   ui.brandTitle.textContent = config.title;
   ui.heroTitle.textContent = config.title;
   ui.brandRoute.textContent = config.subtitle;
+  ui.plate.textContent = config.plate || '';
+  ui.plate.hidden = !config.plate;
   ui.heroSub.textContent = config.marquee;
   ui.shuffle.setAttribute('aria-pressed', String(Boolean(config.shuffle)));
   paintSlogan();
@@ -558,10 +686,16 @@ async function boot() {
 
   tickClock();
   setInterval(tickClock, 1000);
+  paintDate();
+  setInterval(paintDate, 60_000);
   rotateSlogans();
+
+  pingPresence();
+  setInterval(pingPresence, 25_000);
 
   if (slides.length) showSlide(0);
   if (stage.video.src) stage.video.play().catch(() => {});
+  watchHornSpot();
 
   if (!config.playlistId) {
     ui.track.textContent = 'कुनै प्लेलिस्ट छैन';
