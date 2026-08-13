@@ -164,7 +164,9 @@ function buildStage() {
 
   stage.vignette.classList.toggle('on', Boolean(config.chrome.vignette));
 
-  // Backdrop for the letterbox bands on portrait screens.
+  // Backdrop for the letterbox bands on portrait screens. The still is the
+  // starting point; once a clip has frames, sampleBackdrop swaps in the scene
+  // that is actually on screen.
   const backdrop = config.frames[0]?.url || '';
   stage.blur.style.backgroundImage = backdrop
     ? `url("${backdrop.replace(/["\\]/g, '\\$&')}")` // the path may hold spaces or quotes
@@ -331,6 +333,7 @@ function onClipEnded(event) {
   clipAt = (clipAt + 1) % clipList.length;
   primeNext();
   placePill();
+  sampleBackdrop();
 }
 
 /* ─────────────────────────────────────────────── the horn */
@@ -400,6 +403,37 @@ function synthHonk() {
   }
 }
 
+/**
+ * Fitting the whole 16:9 frame onto a portrait phone leaves a band above and
+ * below it. Rather than leave those dark, paint them with a heavily blurred
+ * copy of the frame on screen. Tiny on purpose: it is blurred to mush anyway,
+ * and this runs on a clip change rather than per frame.
+ */
+const backdropCanvas = document.createElement('canvas');
+backdropCanvas.width = 64;
+backdropCanvas.height = 36;
+
+function sampleBackdrop() {
+  const media = activeMedia();
+  if (!media) return;
+  const ready = media.videoWidth || media.naturalWidth;
+  if (!ready) return;
+  try {
+    const ctx = backdropCanvas.getContext('2d');
+    ctx.drawImage(media, 0, 0, backdropCanvas.width, backdropCanvas.height);
+    stage.blur.style.backgroundImage = `url("${backdropCanvas.toDataURL('image/jpeg', 0.7)}")`;
+    stage.blur.classList.add('on');
+  } catch {
+    /* Keep whichever backdrop is already up. */
+  }
+}
+
+/** How far the fitted portrait framing zooms back in. 1 keeps the whole frame. */
+function portraitZoom() {
+  const zoom = Number(config?.chrome?.portraitZoom);
+  return Number.isFinite(zoom) ? Math.min(4, Math.max(1, zoom)) : 1;
+}
+
 /* ─────────────────────────────────────────────── horn over the corner */
 
 /**
@@ -421,7 +455,7 @@ function placePill() {
   const portrait = matchMedia('(max-aspect-ratio: 1/1)').matches;
   const contained = portrait && !document.body.classList.contains('fill-screen');
   const scale = contained
-    ? Math.min(cw / natW, ch / natH)
+    ? Math.min(cw / natW, ch / natH) * portraitZoom()
     : Math.max(cw / natW, ch / natH);
 
   const gapRight = Math.max(0, (cw - natW * scale) / 2);
@@ -443,8 +477,10 @@ function placePill() {
 }
 
 function watchPillSpot() {
+  const settle = () => { placePill(); sampleBackdrop(); };
+  for (const v of layers()) v.addEventListener('loadeddata', settle);
   for (const v of layers()) v.addEventListener('loadedmetadata', placePill);
-  for (const img of slides) img.addEventListener('load', placePill);
+  for (const img of slides) img.addEventListener('load', settle);
   window.addEventListener('resize', placePill, { passive: true });
   window.addEventListener('orientationchange', () => setTimeout(placePill, 250));
   placePill();
@@ -930,6 +966,7 @@ async function boot() {
   wireControls();
 
   document.body.classList.toggle('fill-screen', Boolean(config.chrome.fillScreen));
+  document.documentElement.style.setProperty('--pzoom', String(portraitZoom()));
 
   tickClock();
   setInterval(tickClock, 1000);

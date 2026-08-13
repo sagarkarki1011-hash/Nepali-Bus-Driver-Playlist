@@ -68,7 +68,7 @@ html, body {
   display: none;
   background-position: center;
   background-size: cover;
-  filter: blur(30px) brightness(0.5) saturate(1.15);
+  filter: blur(26px) brightness(0.78) saturate(1.25);
   transform: scale(1.18);
 }
 
@@ -923,6 +923,16 @@ body.muted .vol-mute svg { fill: var(--muted); }
                       rgba(12, 9, 7, 0.94) 100%);
   }
 
+  /* Fitted framing puts blurred mush behind the header rather than real detail,
+     so it needs far less darkening to stay readable — and the bands then read
+     as part of the scene instead of dead space. */
+  body:not(.fill-screen) #scrim {
+    background:
+      linear-gradient(to bottom, rgba(12, 9, 7, 0.58) 0%, rgba(12, 9, 7, 0.16) 20%,
+                      rgba(12, 9, 7, 0.12) 44%, rgba(12, 9, 7, 0.62) 72%,
+                      rgba(12, 9, 7, 0.93) 100%);
+  }
+
   /* The quote is a caption, not a headline — it sits over the footage, so it
      stays small and lets the road through. */
   .quote-wrap { gap: 2px; margin-bottom: clamp(4px, 1.4vh, 14px); }
@@ -1014,8 +1024,9 @@ body.muted .vol-mute svg { fill: var(--muted); }
   .bgv, #frames img { object-fit: contain; }
 
   /* The zoom sits on the containers, not the media: showSlide writes an inline
-     transform on each frame for the Ken Burns drift, which would win here. */
-  #frames, .bgv { transform: scale(1.75); }
+     transform on each frame for the Ken Burns drift, which would win here.
+     --pzoom comes from chrome.portraitZoom; 1 keeps the whole frame on screen. */
+  #frames, .bgv { transform: scale(var(--pzoom, 1)); }
 
   body.fill-screen #bgblur { display: none; }
   body.fill-screen .bgv,

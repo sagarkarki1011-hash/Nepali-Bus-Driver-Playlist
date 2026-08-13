@@ -25,6 +25,8 @@ const el = {
   plate: $('#plate'),
   chVignette: $('#ch-vignette'),
   chFill: $('#ch-fill'),
+  pzoom: $('#pzoom'),
+  pzoomOut: $('#pzoom-out'),
 
   hold: $('#hold'),
   holdOut: $('#hold-out'),
@@ -147,6 +149,16 @@ el.logout.addEventListener('click', async () => {
 
 /* ------------------------------------------------------- form <-> state */
 
+/** Configs saved before the zoom existed have no value; 1 shows the whole frame. */
+function paintZoom() {
+  const zoom = Number(state.chrome.portraitZoom);
+  const value = Number.isFinite(zoom) ? Math.min(3, Math.max(1, zoom)) : 1;
+  state.chrome.portraitZoom = value;
+  el.pzoom.value = String(value);
+  el.pzoomOut.textContent = `${value.toFixed(2)}×`;
+  el.pzoom.disabled = state.chrome.fillScreen;
+}
+
 function paint() {
   el.playlist.value = state.playlistId;
   el.shuffle.checked = state.shuffle;
@@ -160,6 +172,7 @@ function paint() {
   el.plate.value = state.plate || '';
   el.chVignette.checked = state.chrome.vignette;
   el.chFill.checked = state.chrome.fillScreen;
+  paintZoom();
 
   const mode = $(`input[name="mode"][value="${state.motion.mode}"]`);
   if (mode) mode.checked = true;
@@ -217,8 +230,17 @@ function bindInputs() {
     [el.chVignette, 'vignette'],
     [el.chFill, 'fillScreen']
   ]) {
-    node.addEventListener('change', () => set(() => (state.chrome[key] = node.checked)));
+    node.addEventListener('change', () => set(() => {
+      state.chrome[key] = node.checked;
+      paintZoom(); // the zoom only bites when the crop is off
+    }));
   }
+
+  el.pzoom.addEventListener('input', () => {
+    state.chrome.portraitZoom = Number(el.pzoom.value);
+    paintZoom();
+    refreshDirty();
+  });
 
   for (const radio of $$('input[name="mode"]')) {
     radio.addEventListener('change', () => {

@@ -29,10 +29,14 @@ export const DEFAULT_CONFIG = {
   },
   chrome: {
     vignette: true,
-    // Portrait phones are far taller than a 16:9 clip is, so one has to give:
-    // true fills the screen edge to edge and crops the sides to about a quarter
-    // of the frame; false shows the whole frame over a blurred backdrop instead.
-    fillScreen: true
+    // A 16:9 clip cannot cover a 9:19.5 phone without losing three quarters of
+    // its width — the two cannot both be had, so this is the dial between them.
+    // fillScreen true crops to fill the screen edge to edge. false shows the
+    // whole frame across the full width, with a blurred copy behind filling the
+    // bands above and below, and portraitZoom then trades frame for coverage:
+    // 1 keeps every pixel of the clip on screen, 3.85 is the same as cropping.
+    fillScreen: false,
+    portraitZoom: 1
   }
 };
 
