@@ -16,15 +16,14 @@ const ui = {
   plate: $('#plate'),
   dateBs: $('#date-bs'),
   dateAd: $('#date-ad'),
-  hornSpot: $('#horn-spot'),
   quote: $('#quote'),
+  quoteRefresh: $('#quote-refresh'),
 
   eyebrow: $('#eyebrow'),
   heroTitle: $('#hero-title'),
   heroSub: $('#hero-sub'),
   pill: $('#pill'),
   pillMain: $('#pill-main'),
-  pillSub: $('#pill-sub'),
 
   mascot: $('#mascot'),
   art: $('#art'),
@@ -247,14 +246,38 @@ function showSlide(index) {
 
 /* ─────────────────────────────────────────────── the horn */
 
-let audioCtx = null;
+const HORNS = ['/horn/horn1.mp3', '/horn/horn2.mp3', '/horn/horn3.mp3'];
+const hornAudio = HORNS.map((src) => {
+  const a = new Audio(src);
+  a.preload = 'auto';
+  a.volume = 0.9;
+  return a;
+});
+let lastHorn = -1;
+
 function honk() {
-  for (const node of [ui.mascot, ui.hornSpot]) {
+  for (const node of [ui.mascot, ui.pill]) {
     node.classList.remove('blow');
     void node.offsetWidth;
     node.classList.add('blow');
   }
 
+  let pick = Math.floor(Math.random() * hornAudio.length);
+  if (hornAudio.length > 1 && pick === lastHorn) pick = (pick + 1) % hornAudio.length;
+  lastHorn = pick;
+
+  const horn = hornAudio[pick];
+  try {
+    horn.currentTime = 0; // restart if it is mashed
+    horn.play().catch(synthHonk);
+  } catch {
+    synthHonk();
+  }
+}
+
+/** Fallback if the recordings cannot be played: the old synthesised air horn. */
+let audioCtx = null;
+function synthHonk() {
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -265,7 +288,6 @@ function honk() {
     filter.type = 'lowpass';
     filter.frequency.value = 2100;
 
-    // A two-tone air horn, with a little grit underneath.
     [233, 349, 466].forEach((freq, i) => {
       const osc = audioCtx.createOscillator();
       osc.type = i === 0 ? 'sawtooth' : 'square';
@@ -284,7 +306,7 @@ function honk() {
 
     filter.connect(gain).connect(audioCtx.destination);
   } catch {
-    /* No Web Audio, no horn. The animation still plays. */
+    /* No Web Audio either. The animation still plays. */
   }
 }
 
@@ -295,7 +317,7 @@ function honk() {
  * where the generator burns its logo in — rather than the corner of the screen.
  * With object-fit the rendered box rarely matches the element box, so measure it.
  */
-function placeHorn() {
+function placePill() {
   const media = config.video.enabled && config.video.url ? stage.video : slides[0];
   if (!media) return;
 
@@ -319,17 +341,17 @@ function placeHorn() {
   const player = document.querySelector('.player').getBoundingClientRect();
   const floor = Math.max(0, ch - player.top) + 8;
 
-  ui.hornSpot.style.right = `${Math.round(gapRight + 10)}px`;
-  ui.hornSpot.style.bottom = `${Math.round(Math.max(gapBottom + 10, floor))}px`;
-  ui.hornSpot.hidden = false;
+  ui.pill.style.right = `${Math.round(gapRight + 10)}px`;
+  ui.pill.style.bottom = `${Math.round(Math.max(gapBottom + 10, floor))}px`;
+  ui.pill.hidden = false;
 }
 
-function watchHornSpot() {
-  stage.video.addEventListener('loadedmetadata', placeHorn);
-  for (const img of slides) img.addEventListener('load', placeHorn);
-  window.addEventListener('resize', placeHorn, { passive: true });
-  window.addEventListener('orientationchange', () => setTimeout(placeHorn, 250));
-  placeHorn();
+function watchPillSpot() {
+  stage.video.addEventListener('loadedmetadata', placePill);
+  for (const img of slides) img.addEventListener('load', placePill);
+  window.addEventListener('resize', placePill, { passive: true });
+  window.addEventListener('orientationchange', () => setTimeout(placePill, 250));
+  placePill();
 }
 
 /* ─────────────────────────────────────────────── tailgate quotes */
@@ -373,39 +395,12 @@ function rollQuote() {
   ui.quote.classList.add('fresh');
 }
 
-/* ─────────────────────────────────────────────── the pill */
+/* ─────────────────────────────────────────────── the sound / horn control */
 
-const SLOGANS = [
-  ['हर्न ओके प्लिज', 'HORN OK PLEASEEEE'],
-  ['शुभ यात्रा', 'SAFE JOURNEY'],
-  ['जय पशुपतिनाथ', 'JAI PASHUPATINATH'],
-  ['भाडा तिरेर मात्र यात्रा गर्नुहोस्', 'TICKETS PLEASE'],
-  ['बिस्तारै जानुहोस्', 'DRIVE SLOW'],
-  ['ढुक्क भएर बस्नुहोस्', 'SIT BACK, RELAX']
-];
-
-let sloganIndex = 0;
-let sloganTimer = null;
-
-function paintSlogan() {
-  const [main, sub] = SLOGANS[sloganIndex % SLOGANS.length];
-  ui.pillMain.textContent = main;
-  ui.pillSub.textContent = sub;
-}
-
-function rotateSlogans() {
-  clearInterval(sloganTimer);
-  sloganTimer = setInterval(() => {
-    if (!unlocked) return; // the pill is asking for a tap; leave it alone
-    sloganIndex += 1;
-    paintSlogan();
-  }, 7000);
-}
-
-function askForSound() {
-  ui.pill.classList.add('calling');
-  ui.pillMain.textContent = 'आवाजका लागि थिच्नुहोस्';
-  ui.pillSub.textContent = 'TAP ANYWHERE FOR SOUND';
+function paintPill() {
+  ui.pillMain.textContent = unlocked ? 'हर्न' : 'आवाज';
+  ui.pill.title = unlocked ? 'हर्न बजाउनुहोस्' : 'आवाज खोल्न थिच्नुहोस्';
+  ui.pill.setAttribute('aria-label', ui.pill.title);
 }
 
 /* ─────────────────────────────────────────────── who else is listening */
@@ -607,7 +602,8 @@ const GESTURES = ['pointerdown', 'keydown', 'touchstart'];
 
 function armUnlock() {
   if (unlocked) return;
-  askForSound();
+  ui.pill.classList.add('calling');
+  paintPill();
   for (const event of GESTURES) {
     window.addEventListener(event, unlock, { once: true, passive: true });
   }
@@ -619,7 +615,7 @@ function unlock() {
 
   for (const event of GESTURES) window.removeEventListener(event, unlock);
   ui.pill.classList.remove('calling');
-  paintSlogan();
+  paintPill();
 
   try {
     player.unMute();
@@ -654,11 +650,9 @@ function wireControls() {
   ui.pill.addEventListener('click', () => {
     if (!unlocked) return; // the window listener handles the unlock
     honk();
-    sloganIndex += 1;
-    paintSlogan();
   });
+  ui.quoteRefresh.addEventListener('click', rollQuote);
   ui.mascot.addEventListener('click', honk);
-  ui.hornSpot.addEventListener('click', honk);
 
   ui.toggle.addEventListener('click', togglePlay);
   ui.prev.addEventListener('click', () => playerReady && player.previousVideo());
@@ -719,7 +713,7 @@ function paintText() {
   ui.plate.hidden = !config.plate;
   ui.heroSub.textContent = config.marquee;
   ui.shuffle.setAttribute('aria-pressed', String(Boolean(config.shuffle)));
-  paintSlogan();
+  paintPill();
   rollQuote();
 }
 
@@ -742,14 +736,13 @@ async function boot() {
   setInterval(tickClock, 1000);
   paintDate();
   setInterval(paintDate, 60_000);
-  rotateSlogans();
 
   pingPresence();
   setInterval(pingPresence, 25_000);
 
   if (slides.length) showSlide(0);
   if (stage.video.src) stage.video.play().catch(() => {});
-  watchHornSpot();
+  watchPillSpot();
 
   if (!config.playlistId) {
     ui.track.textContent = 'कुनै प्लेलिस्ट छैन';

@@ -311,67 +311,23 @@ html, body {
 }
 .hero-rule span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ── announcement pill ── */
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: clamp(4px, 1.6vh, 16px);
-  padding: 9px 22px 9px 9px;
-  min-height: var(--tap);
-  max-width: min(100%, 26rem);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel);
-  backdrop-filter: blur(10px);
-  color: var(--cream);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 220ms ease, background 220ms ease, transform 140ms ease;
-}
-.pill:hover, .pill:focus-visible { border-color: rgba(240, 166, 64, 0.5); background: rgba(28, 22, 17, 0.82); }
-.pill:active { transform: scale(0.98); }
-.pill.calling { animation: breathe 2.6s ease-in-out infinite; border-color: rgba(240, 166, 64, 0.45); }
-@keyframes breathe { 0%, 100% { opacity: 0.72; } 50% { opacity: 1; } }
-
-.pill-badge {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(244, 236, 224, 0.1);
-}
-.pill-badge svg { width: 17px; height: 17px; fill: var(--amber); }
-
-.pill-copy { display: flex; flex-direction: column; min-width: 0; }
-.pill-copy strong {
-  font-size: clamp(0.82rem, 3.2vw, 0.98rem);
-  font-weight: 700;
-  line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.pill-copy small {
-  font-size: clamp(0.52rem, 2vw, 0.63rem);
-  letter-spacing: 0.22em;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* ── the line painted on the tailgate ── */
 
-.quote {
+.quote-wrap {
   /* auto top margin drops it to the foot of the hero row, above the player */
   margin: auto 0 clamp(4px, 2vh, 22px);
-  max-width: min(100%, 34rem);
-  padding: 12px clamp(14px, 5vw, 30px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: min(100%, 38rem);
+  min-width: 0;
+}
+
+.quote {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 12px clamp(10px, 4vw, 24px);
   border-top: 1px solid rgba(240, 166, 64, 0.28);
   border-bottom: 1px solid rgba(240, 166, 64, 0.28);
   font-size: clamp(0.9rem, 3.7vw, 1.12rem);
@@ -398,6 +354,29 @@ html, body {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
 }
+
+.quote-refresh {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 180ms ease, background 180ms ease, transform 400ms ease;
+}
+.quote-refresh svg { width: 17px; height: 17px; fill: currentColor; }
+.quote-refresh:hover, .quote-refresh:focus-visible {
+  opacity: 1;
+  color: var(--amber);
+  background: rgba(244, 236, 224, 0.09);
+}
+.quote-refresh:active { transform: rotate(180deg); }
 
 @media (prefers-reduced-motion: reduce) {
   .quote.fresh { animation: none; }
@@ -601,30 +580,62 @@ body.playing .ctrls .play .i-pause { display: block; }
 
 #shuffle[aria-pressed="true"] { color: var(--amber); opacity: 1; }
 
-/* ══════════════ horn over the footage corner ══════════════
-   Positioned in JS onto the bottom-right of the rendered video, which is where
-   the generator burns its logo in. Opaque enough to cover what is underneath. */
+/* ══════════════ the sound / horn control ══════════════
+   Positioned in JS onto the bottom-right of the rendered footage, which is both
+   beside the driver and where the generator burns its logo in. */
 
-#horn-spot {
+.pill {
   position: fixed;
   z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px 5px 5px;
+  min-height: 36px;
+  max-width: 62vw;
+  overflow: visible; /* buttons clip pseudo-elements; the hit overhang needs out */
+  border: 1px solid rgba(244, 236, 224, 0.18);
+  border-radius: 999px;
+  background: rgba(16, 12, 10, 0.9);
+  backdrop-filter: blur(10px);
+  color: var(--cream);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 200ms ease, background 200ms ease, transform 140ms ease;
+}
+/* Kept visually small as asked, but the tappable box is pushed back out to the
+   44px minimum with a transparent overhang. */
+.pill::after {
+  content: "";
+  position: absolute;
+  inset: -6px -4px;
+}
+
+.pill:hover, .pill:focus-visible { border-color: var(--amber); background: rgba(28, 22, 17, 0.94); }
+.pill:active { transform: scale(0.95); }
+.pill.calling { animation: breathe 2.4s ease-in-out infinite; border-color: rgba(240, 166, 64, 0.5); }
+@keyframes breathe { 0%, 100% { opacity: 0.78; } 50% { opacity: 1; } }
+.pill.blow { animation: honk 620ms ease; }
+
+.pill-badge {
   display: grid;
   place-items: center;
-  width: var(--tap);
-  height: var(--tap);
-  padding: 0;
-  border: 1px solid rgba(244, 236, 224, 0.18);
+  flex: none;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: rgba(16, 12, 10, 0.94);
-  backdrop-filter: blur(10px);
-  color: var(--amber);
-  cursor: pointer;
-  transition: transform 140ms ease, border-color 200ms ease;
+  background: rgba(244, 236, 224, 0.1);
 }
-#horn-spot svg { width: 19px; height: 19px; fill: currentColor; }
-#horn-spot:hover, #horn-spot:focus-visible { border-color: var(--amber); }
-#horn-spot:active { transform: scale(0.92); }
-#horn-spot.blow { animation: honk 620ms ease; }
+.pill-badge svg { width: 14px; height: 14px; fill: var(--amber); }
+
+.pill-copy {
+  font-size: clamp(0.62rem, 2.5vw, 0.74rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ══════════════ toast ══════════════ */
 
@@ -695,7 +706,7 @@ body.playing .ctrls .play .i-pause { display: block; }
 /* Very short screens (phone landscape): trim the hero so the player still fits. */
 @media (max-height: 520px) {
   .hero-title { font-size: clamp(1.4rem, 6vw, 2.2rem); }
-  .eyebrow, .hero-rule, .quote { display: none; }
+  .eyebrow, .hero-rule, .quote-wrap { display: none; }
   .hero { padding-top: 0; justify-content: center; }
 }
 
