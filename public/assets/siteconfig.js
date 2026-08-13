@@ -1,7 +1,11 @@
 // The one place defaults live. The API imports this to fill gaps in a stored
 // config, and the ride imports it directly if /api/config is unreachable.
 export const DEFAULT_CONFIG = {
+  // title is the operator on the header badge and the browser tab; heading is
+  // the big line across the middle of the screen. They are separate so the bus
+  // can be नेपाल यातायात while the page greets you as the driver.
   title: 'नेपाल यातायात',
+  heading: 'ड्राइभर दाइ',
   subtitle: 'Morang — Kathmandu',
   plate: 'MA 1 KHA 6969',
   marquee: 'जय पशुपतिनाथ',

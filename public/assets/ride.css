@@ -895,6 +895,34 @@ body.muted .vol-mute svg { fill: var(--muted); }
   .mascot { display: none; }
   .ctrls-gap { display: none; }
 
+  /* On a phone the crop puts the bus's own painted signboard right where the
+     heading was, so two sets of Devanagari fought each other across the top.
+     The whole caption block moves to the foot of the screen instead: the scene
+     — mirror, garland, valley — gets the middle to itself, and the words sit
+     together in the dark band above the player where they are easiest to read. */
+  .hero {
+    justify-content: flex-end;
+    padding-top: 0;
+    gap: clamp(4px, 1vh, 10px);
+  }
+  .quote-wrap { margin-top: clamp(6px, 1.4vh, 14px); }
+
+  .hero-title { font-size: clamp(1.75rem, 9vw, 2.9rem); }
+
+  /* Small type now lands on the dashboard rather than on flat darkness. */
+  .eyebrow, .hero-rule {
+    color: #cbbfb1;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.8);
+  }
+
+  /* Keep the middle clear and weight the darkening towards the text. */
+  #scrim {
+    background:
+      linear-gradient(to bottom, rgba(12, 9, 7, 0.8) 0%, rgba(12, 9, 7, 0.3) 22%,
+                      rgba(12, 9, 7, 0.32) 46%, rgba(12, 9, 7, 0.72) 74%,
+                      rgba(12, 9, 7, 0.94) 100%);
+  }
+
   /* The quote is a caption, not a headline — it sits over the footage, so it
      stays small and lets the road through. */
   .quote-wrap { gap: 2px; margin-bottom: clamp(4px, 1.4vh, 14px); }

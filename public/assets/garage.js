@@ -19,6 +19,7 @@ const el = {
   volumeOut: $('#volume-out'),
 
   title: $('#title'),
+  heading: $('#heading'),
   subtitle: $('#subtitle'),
   marquee: $('#marquee'),
   plate: $('#plate'),
@@ -153,6 +154,7 @@ function paint() {
   el.volumeOut.textContent = `${state.volume}%`;
 
   el.title.value = state.title;
+  el.heading.value = state.heading ?? state.title;
   el.subtitle.value = state.subtitle;
   el.marquee.value = state.marquee;
   el.plate.value = state.plate || '';
@@ -207,7 +209,7 @@ function bindInputs() {
     refreshDirty();
   });
 
-  for (const [node, key] of [[el.title, 'title'], [el.subtitle, 'subtitle'], [el.marquee, 'marquee'], [el.plate, 'plate']]) {
+  for (const [node, key] of [[el.title, 'title'], [el.heading, 'heading'], [el.subtitle, 'subtitle'], [el.marquee, 'marquee'], [el.plate, 'plate']]) {
     node.addEventListener('input', () => set(() => (state[key] = node.value)));
   }
 

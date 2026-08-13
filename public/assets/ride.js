@@ -427,9 +427,15 @@ function placePill() {
   const gapRight = Math.max(0, (cw - natW * scale) / 2);
   const gapBottom = Math.max(0, (ch - natH * scale) / 2);
 
-  // Never let it slide under the player bar.
-  const player = document.querySelector('.player').getBoundingClientRect();
-  const floor = Math.max(0, ch - player.top) + 8;
+  // Never let it slide under the player bar — nor, on phones, under the caption
+  // block that sits at the foot of the screen with it.
+  const blockers = [document.querySelector('.player')];
+  if (matchMedia('(max-width: 719px)').matches) {
+    const caption = document.querySelector('.eyebrow');
+    if (caption?.getBoundingClientRect().height) blockers.push(caption);
+  }
+  const highest = Math.min(...blockers.map((node) => node.getBoundingClientRect().top));
+  const floor = Math.max(0, ch - highest) + 8;
 
   ui.pill.style.right = `${Math.round(gapRight + 10)}px`;
   ui.pill.style.bottom = `${Math.round(Math.max(gapBottom + 10, floor))}px`;
@@ -898,7 +904,8 @@ function wireControls() {
 function paintText() {
   document.title = config.title || 'नेपाल यातायात';
   ui.brandTitle.textContent = config.title;
-  ui.heroTitle.textContent = config.title;
+  // Falls back to the operator name for configs saved before heading existed.
+  ui.heroTitle.textContent = config.heading || config.title;
   ui.brandRoute.textContent = config.subtitle;
   ui.plate.textContent = config.plate || '';
   ui.plate.hidden = !config.plate;
