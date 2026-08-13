@@ -246,7 +246,8 @@ function showSlide(index) {
 
 /* ─────────────────────────────────────────────── the horn */
 
-const HORNS = ['/horn/horn1.mp3', '/horn/horn2.mp3', '/horn/horn3.mp3'];
+// Kept alongside the other media in public/frames so no new folder is needed.
+const HORNS = ['/frames/horn1.mp3', '/frames/horn2.mp3', '/frames/horn3.mp3'];
 const hornAudio = HORNS.map((src) => {
   const a = new Audio(src);
   a.preload = 'auto';
@@ -722,7 +723,7 @@ async function boot() {
     const res = await fetch('/api/config', { cache: 'no-store' });
     config = await res.json();
   } catch {
-    const { DEFAULT_CONFIG } = await import('/assets/fallback-config.js');
+    const { DEFAULT_CONFIG } = await import('/assets/siteconfig.js');
     config = DEFAULT_CONFIG;
   }
 

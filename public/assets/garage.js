@@ -1,4 +1,4 @@
-import { DEFAULT_CONFIG } from '/assets/fallback-config.js';
+import { DEFAULT_CONFIG } from '/assets/siteconfig.js';
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
