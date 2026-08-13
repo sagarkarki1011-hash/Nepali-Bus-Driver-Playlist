@@ -25,9 +25,11 @@ const ui = {
   heroSub: $('#hero-sub'),
   pill: $('#pill'),
   pillMain: $('#pill-main'),
-  pillMute: $('#pill-mute'),
-  pillToggle: $('#pill-toggle'),
-  pillVol: $('#pill-vol'),
+  vol: $('#vol'),
+  volPop: $('#vol-pop'),
+  volMute: $('#vol-mute'),
+  volRange: $('#vol-range'),
+  volOut: $('#vol-out'),
   ticket: $('#ticket'),
   ticketSheet: $('#ticket-sheet'),
   ticketClose: $('#ticket-close'),
@@ -483,13 +485,20 @@ function rollQuote() {
   ui.quote.classList.add('fresh');
 }
 
-/* ─────────────────────────────────────────────── the sound / horn control */
+/* ─────────────────────────────────────────────── the horn button */
 
+/**
+ * The horn doubles as the unlock affordance: the first tap anywhere starts the
+ * audio, so a visitor who reaches for the horn gets the music as well. Only the
+ * tooltip says so — the face of it stays a horn.
+ */
 function paintPill() {
-  ui.pillMain.textContent = 'आवाज';
-  ui.pillToggle.title = unlocked ? 'आवाजको मात्रा' : 'आवाज खोल्न थिच्नुहोस्';
-  ui.pillToggle.setAttribute('aria-label', ui.pillToggle.title);
+  ui.pillMain.textContent = 'हर्न';
+  ui.pill.title = unlocked ? 'हर्न बजाउनुहोस्' : 'हर्न — थिच्दा गीत पनि सुरु हुन्छ';
+  ui.pill.setAttribute('aria-label', ui.pill.title);
 }
+
+/* ─────────────────────────────────────────────── volume */
 
 function currentVolume() {
   try {
@@ -502,8 +511,9 @@ function currentVolume() {
 }
 
 function paintVolume(value) {
-  ui.pillVol.value = String(value);
-  ui.pillVol.style.setProperty('--pct', `${value}%`);
+  ui.volRange.value = String(value);
+  ui.volRange.style.setProperty('--pct', `${value}%`);
+  ui.volOut.textContent = String(value);
 }
 
 function applyVolume(value, remember = true) {
@@ -801,28 +811,34 @@ function nudgeVolume(delta) {
   applyVolume(player.getVolume() + delta);
 }
 
+function showVolume(open) {
+  ui.volPop.hidden = !open;
+  ui.vol.setAttribute('aria-expanded', String(open));
+  if (open) ui.volRange.focus();
+}
+
 function wireControls() {
-  // Before sound is unlocked the whole pill is just the unlock prompt; the
-  // window-level gesture listener does that work, so these stay quiet.
-  ui.pillToggle.addEventListener('click', () => {
-    if (!unlocked) return;
-    ui.pill.classList.toggle('open');
-    ui.pillVol.hidden = false;
-    if (ui.pill.classList.contains('open')) ui.pillVol.focus();
-  });
+  // The window-level gesture listener handles the unlock, so this only honks.
+  ui.pill.addEventListener('click', honk);
 
-  ui.pillMute.addEventListener('click', () => {
-    if (!unlocked) return;
-    toggleMute();
-  });
+  ui.vol.addEventListener('click', () => showVolume(ui.volPop.hidden));
+  ui.volMute.addEventListener('click', toggleMute);
+  ui.volRange.addEventListener('input', () => applyVolume(Number(ui.volRange.value)));
 
-  ui.pillVol.addEventListener('input', () => applyVolume(Number(ui.pillVol.value)));
+  // Anywhere else closes it — but not a press inside the flyout itself.
+  document.addEventListener('pointerdown', (event) => {
+    if (ui.volPop.hidden) return;
+    if (event.target.closest('#vol-pop, #vol')) return;
+    showVolume(false);
+  });
 
   ui.ticket.addEventListener('click', openTicket);
   ui.ticketClose.addEventListener('click', closeTicket);
   ui.ticketBack.addEventListener('click', closeTicket);
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !ui.ticketSheet.hidden) closeTicket();
+    if (e.key !== 'Escape') return;
+    if (!ui.ticketSheet.hidden) closeTicket();
+    if (!ui.volPop.hidden) { showVolume(false); ui.vol.focus(); }
   });
   ui.quoteRefresh.addEventListener('click', rollQuote);
   ui.mascot.addEventListener('click', honk);
@@ -870,6 +886,7 @@ function wireControls() {
       case 'KeyS': ui.shuffle.click(); break;
       case 'KeyF': ui.fs.click(); break;
       case 'KeyM': toggleMute(); break;
+      case 'KeyV': ui.vol.click(); break;
       case 'KeyT': ui.ticketSheet.hidden ? openTicket() : closeTicket(); break;
       default: break;
     }
@@ -879,7 +896,7 @@ function wireControls() {
 /* ─────────────────────────────────────────────── boot */
 
 function paintText() {
-  document.title = config.title || 'ड्राइभर दाइ';
+  document.title = config.title || 'नेपाल यातायात';
   ui.brandTitle.textContent = config.title;
   ui.heroTitle.textContent = config.title;
   ui.brandRoute.textContent = config.subtitle;

@@ -594,9 +594,83 @@ body.playing .ctrls .play .i-pause { display: block; }
 
 #shuffle[aria-pressed="true"] { color: var(--amber); opacity: 1; }
 
-/* ══════════════ the sound / horn control ══════════════
+/* ── volume ──
+   The slider lives in a flyout instead of the row itself: seven buttons plus a
+   track will not fit across a 390px phone. It anchors to .player rather than to
+   the button, so it floats clear above the whole bar instead of covering the
+   song title, and pinning it to the right edge keeps it on screen at any width. */
+
+#vol .i-mute { display: none; }
+body.muted #vol { color: var(--muted); }
+body.muted #vol .i-loud { display: none; }
+body.muted #vol .i-mute { display: block; }
+#vol[aria-expanded="true"] { color: var(--amber); opacity: 1; }
+
+.vol-pop {
+  position: absolute; /* against .player — .ctrls is deliberately not positioned */
+  right: clamp(10px, 2.2vw, 16px);
+  bottom: calc(100% + 10px);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(22, 17, 13, 0.96);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.ctrls .vol-mute {
+  width: 32px;
+  height: 32px;
+  background: rgba(244, 236, 224, 0.1);
+  opacity: 1;
+}
+.ctrls .vol-mute svg { width: 15px; height: 15px; fill: var(--amber); }
+.vol-mute .i-mute { display: none; }
+body.muted .vol-mute .i-loud { display: none; }
+body.muted .vol-mute .i-mute { display: block; }
+body.muted .vol-mute svg { fill: var(--muted); }
+
+.vol-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: clamp(96px, 30vw, 150px);
+  height: 22px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.vol-range::-webkit-slider-runnable-track {
+  height: 3px; border-radius: 2px;
+  background: linear-gradient(to right, var(--amber) var(--pct, 70%), rgba(244,236,224,0.25) var(--pct, 70%));
+}
+.vol-range::-moz-range-track {
+  height: 3px; border-radius: 2px;
+  background: linear-gradient(to right, var(--amber) var(--pct, 70%), rgba(244,236,224,0.25) var(--pct, 70%));
+}
+.vol-range::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 13px; height: 13px; margin-top: -5px;
+  border-radius: 50%; background: var(--cream);
+}
+.vol-range::-moz-range-thumb {
+  width: 13px; height: 13px; border: 0; border-radius: 50%; background: var(--cream);
+}
+
+.vol-out {
+  flex: none;
+  min-width: 2.4ch;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* ══════════════ the horn ══════════════
    Positioned in JS onto the bottom-right of the rendered footage, which is both
-   beside the driver and where the generator burns its logo in. */
+   beside the driver and where the generator burns its logo in. Tapping it is
+   also the gesture that unlocks the audio, so it breathes until then. */
 
 .pill {
   position: fixed;
@@ -607,7 +681,6 @@ body.playing .ctrls .play .i-pause { display: block; }
   padding: 5px 8px 5px 5px;
   min-height: 40px;
   max-width: min(78vw, 320px);
-  overflow: visible; /* buttons clip pseudo-elements; the hit overhang needs out */
   border: 1px solid rgba(244, 236, 224, 0.18);
   border-radius: 999px;
   background: rgba(16, 12, 10, 0.9);
@@ -632,57 +705,10 @@ body.playing .ctrls .play .i-pause { display: block; }
   border-radius: 50%;
   background: rgba(244, 236, 224, 0.1);
 }
-.pill-badge {
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-}
-.pill-badge svg { width: 14px; height: 14px; fill: var(--amber); }
-.pill-badge .i-mute { display: none; }
-body.muted .pill-badge .i-loud { display: none; }
-body.muted .pill-badge .i-mute { display: block; }
-body.muted .pill-badge svg { fill: var(--muted); }
+.pill-badge svg { width: 15px; height: 15px; fill: var(--amber); }
 
-/* The slider only takes up room once the pill is opened. */
-.pill-vol {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 0;
-  height: 18px;
-  margin: 0;
-  opacity: 0;
-  background: transparent;
-  cursor: pointer;
-  transition: width 260ms ease, opacity 200ms ease, margin 260ms ease;
-}
-.pill.open .pill-vol { width: clamp(72px, 26vw, 130px); margin-right: 6px; opacity: 1; }
-.pill-vol::-webkit-slider-runnable-track {
-  height: 3px; border-radius: 2px;
-  background: linear-gradient(to right, var(--amber) var(--pct, 70%), rgba(244,236,224,0.25) var(--pct, 70%));
-}
-.pill-vol::-moz-range-track {
-  height: 3px; border-radius: 2px;
-  background: linear-gradient(to right, var(--amber) var(--pct, 70%), rgba(244,236,224,0.25) var(--pct, 70%));
-}
-.pill-vol::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 11px; height: 11px; margin-top: -4px;
-  border-radius: 50%; background: var(--cream);
-}
-.pill-vol::-moz-range-thumb {
-  width: 11px; height: 11px; border: 0; border-radius: 50%; background: var(--cream);
-}
-
-.pill-label {
-  padding: 10px 6px; /* keeps the tap box a sensible height while staying compact */
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  min-width: 0;
-}
-
-.pill-label span, .pill-copy {
+.pill-copy {
+  padding-right: 2px;
   font-size: clamp(0.62rem, 2.5vw, 0.74rem);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -857,6 +883,36 @@ body.muted .pill-badge svg { fill: var(--muted); }
 /* ══════════════ wide screens ══════════════
    The player collapses from three stacked rows into a single bar. */
 
+/* ══════════════ phones ══════════════
+   Seven controls plus the mascot do not fit across a phone — the row was
+   already running off the right edge with six. The mascot is a second horn
+   button, and there is now a real horn parked over the driver's shoulder, so
+   below 720px the duplicate stands down and its width pays for the volume
+   control. Everything stays reachable; nothing is clipped. Heights stay at the
+   44px tap minimum, only the widths breathe in and out. */
+
+@media (max-width: 719px) {
+  .mascot { display: none; }
+  .ctrls-gap { display: none; }
+
+  .ctrls {
+    justify-content: center;
+    gap: clamp(2px, 1vw, 6px);
+  }
+  .ctrls button { width: clamp(34px, 10.5vw, 44px); }
+  .ctrls button svg { width: clamp(17px, 5vw, 21px); height: clamp(17px, 5vw, 21px); }
+  .ctrls .play {
+    width: clamp(44px, 13vw, 54px);
+    height: clamp(44px, 13vw, 54px);
+    margin: 0 clamp(2px, 1vw, 8px);
+  }
+  .ctrls .play svg { width: 22px; height: 22px; }
+
+  /* The flyout is exempt: it is out of flow and sizes itself. */
+  .ctrls .vol-mute { width: 32px; height: 32px; }
+  .ctrls .vol-mute svg { width: 15px; height: 15px; }
+}
+
 @media (min-width: 720px) {
   #shell { padding-inline: clamp(20px, 5vw, 64px); }
 
@@ -887,13 +943,24 @@ body.muted .pill-badge svg { fill: var(--muted); }
 }
 
 /* Portrait phones: a 16:9 clip cropped to fill loses most of its width. */
+/* Portrait phones are far taller than a 16:9 clip. Cropping to fill leaves only
+   about a quarter of the width on screen; fitting it whole leaves a thin band.
+   So fit it whole, then zoom part of the way back — a little over half the width
+   survives — and let the blurred copy behind cover the rest, so the screen is
+   still full. body.fill-screen opts back into the hard crop. */
 @media (max-aspect-ratio: 1/1) {
   #bgblur.on { display: block; }
   .bgv, #frames img { object-fit: contain; }
 
+  /* The zoom sits on the containers, not the media: showSlide writes an inline
+     transform on each frame for the Ken Burns drift, which would win here. */
+  #frames, .bgv { transform: scale(1.75); }
+
   body.fill-screen #bgblur { display: none; }
   body.fill-screen .bgv,
   body.fill-screen #frames img { object-fit: cover; }
+  body.fill-screen #frames,
+  body.fill-screen .bgv { transform: none; }
 }
 
 /* Very short screens (phone landscape): trim the hero so the player still fits. */

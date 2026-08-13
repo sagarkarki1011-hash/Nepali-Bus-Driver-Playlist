@@ -1,7 +1,7 @@
 // The one place defaults live. The API imports this to fill gaps in a stored
 // config, and the ride imports it directly if /api/config is unreachable.
 export const DEFAULT_CONFIG = {
-  title: 'ड्राइभर दाइ',
+  title: 'नेपाल यातायात',
   subtitle: 'Morang — Kathmandu',
   plate: 'MA 1 KHA 6969',
   marquee: 'जय पशुपतिनाथ',
@@ -27,7 +27,7 @@ export const DEFAULT_CONFIG = {
     vignette: true,
     // Portrait phones are far taller than a 16:9 clip is. false shows the whole
     // frame over a blurred backdrop; true crops it to fill the screen edge to edge.
-    fillScreen: true
+    fillScreen: false
   }
 };
 
