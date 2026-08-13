@@ -35,21 +35,22 @@
         <strong id="brand-title">बस ड्राइवर</strong>
         <span id="brand-route" class="route"></span>
       </span>
+      <span class="plate" id="plate" title="गाडी नम्बर"></span>
     </div>
 
     <div class="status">
       <p class="clock"><span id="clock">--:--</span><span id="clock-sec" class="sec">--</span></p>
       <p class="aboard">
         <i class="dot" aria-hidden="true"></i>
-        <strong id="aboard-n">—</strong>
-        <span class="aboard-label">गीत</span>
+        <strong id="aboard-n">१</strong>
+        <span class="aboard-label">सवार · LIVE</span>
       </p>
     </div>
   </header>
 
   <!-- ── middle ─────────────────────────────────────────────── -->
   <main class="hero">
-    <p class="eyebrow" id="eyebrow">नन-स्टप</p>
+    <p class="eyebrow" id="eyebrow"><span id="date-bs"></span><span id="date-ad"></span></p>
     <h1 class="hero-title" id="hero-title">बस ड्राइवर</h1>
     <p class="hero-rule"><span id="hero-sub">राति भरि राजमार्गमा</span></p>
 
@@ -120,6 +121,10 @@
   </footer>
 
 </div>
+
+<button id="horn-spot" type="button" hidden aria-label="हर्न बजाउनुहोस्">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm13.5 2a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4zM14 2.2v2.1a7.8 7.8 0 010 15.4v2.1a9.9 9.9 0 000-19.6z"/></svg>
+</button>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
