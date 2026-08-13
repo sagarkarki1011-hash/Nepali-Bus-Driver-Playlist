@@ -4,6 +4,7 @@ const stage = {
   blur: $('#bgblur'),
   frames: $('#frames'),
   video: $('#bgvideo'),
+  video2: $('#bgvideo2'),
   vignette: $('#vignette')
 };
 
@@ -24,6 +25,13 @@ const ui = {
   heroSub: $('#hero-sub'),
   pill: $('#pill'),
   pillMain: $('#pill-main'),
+  pillMute: $('#pill-mute'),
+  pillToggle: $('#pill-toggle'),
+  pillVol: $('#pill-vol'),
+  ticket: $('#ticket'),
+  ticketSheet: $('#ticket-sheet'),
+  ticketClose: $('#ticket-close'),
+  ticketBack: $('#ticket-back'),
 
   mascot: $('#mascot'),
   art: $('#art'),
@@ -161,18 +169,16 @@ function buildStage() {
     : '';
   stage.blur.classList.toggle('on', Boolean(backdrop));
 
-  if (config.video.enabled && config.video.url) {
-    stage.video.src = config.video.url;
-    stage.video.classList.add('on');
-    stage.video.play().catch(() => {
-      /* Muted loops may autoplay; if refused, the first click covers it. */
-    });
+  const clips = config.video.sources?.length
+    ? config.video.sources
+    : (config.video.url ? [config.video.url] : []);
+
+  if (config.video.enabled && clips.length) {
+    startClips(clips);
     return;
   }
 
-  stage.video.classList.remove('on');
-  stage.video.removeAttribute('src');
-  stage.video.load();
+  stopClips();
 
   if (!config.frames.length) {
     toast('कुनै फ्रेम छैन। <a href="/garage">ग्यारेजमा</a> थप्नुहोस्।', 0);
@@ -242,6 +248,87 @@ function showSlide(index) {
   }
 
   slideTimer = setTimeout(() => showSlide((index + 1) % slides.length), hold);
+}
+
+/* ─────────────────────────────────────────────── the clip sequence */
+
+/**
+ * Two <video> layers taking turns: while one plays, the next clip is already
+ * loading into the other, so the change is a crossfade rather than a black gap.
+ */
+let clipList = [];
+let clipAt = 0;
+let liveLayer = 0;
+
+function layers() {
+  return [stage.video, stage.video2];
+}
+
+/** Whichever layer is currently showing — used for sizing and placement. */
+function activeMedia() {
+  const shown = layers()[liveLayer];
+  return shown?.src ? shown : slides[0];
+}
+
+function startClips(clips) {
+  clipList = clips;
+  clipAt = 0;
+  liveLayer = 0;
+
+  const [a, b] = layers();
+  const single = clipList.length === 1;
+  a.loop = single;
+  b.loop = false;
+
+  a.src = clipList[0];
+  a.dataset.url = clipList[0];
+  a.classList.add('on');
+  b.classList.remove('on');
+  a.play().catch(() => {
+    /* Muted playback is normally allowed; the first click covers a refusal. */
+  });
+
+  if (!single) primeNext();
+  for (const v of layers()) v.addEventListener('ended', onClipEnded);
+}
+
+function stopClips() {
+  for (const v of layers()) {
+    v.removeEventListener('ended', onClipEnded);
+    v.classList.remove('on');
+    v.removeAttribute('src');
+    v.load();
+  }
+  clipList = [];
+}
+
+function primeNext() {
+  if (clipList.length < 2) return;
+  const next = layers()[1 - liveLayer];
+  const url = clipList[(clipAt + 1) % clipList.length];
+  if (next.dataset.url !== url) {
+    next.dataset.url = url;
+    next.preload = 'auto';
+    next.src = url;
+    next.load();
+  }
+}
+
+function onClipEnded(event) {
+  if (clipList.length < 2 || event.target !== layers()[liveLayer]) return;
+
+  const current = layers()[liveLayer];
+  const next = layers()[1 - liveLayer];
+
+  next.currentTime = 0;
+  next.play().catch(() => {});
+  next.classList.add('on');
+  current.classList.remove('on');
+
+  liveLayer = 1 - liveLayer;
+  clipAt = (clipAt + 1) % clipList.length;
+  primeNext();
+  placePill();
 }
 
 /* ─────────────────────────────────────────────── the horn */
@@ -319,7 +406,7 @@ function synthHonk() {
  * With object-fit the rendered box rarely matches the element box, so measure it.
  */
 function placePill() {
-  const media = config.video.enabled && config.video.url ? stage.video : slides[0];
+  const media = activeMedia();
   if (!media) return;
 
   // Assume widescreen until the real dimensions arrive, so the horn is never
@@ -348,7 +435,7 @@ function placePill() {
 }
 
 function watchPillSpot() {
-  stage.video.addEventListener('loadedmetadata', placePill);
+  for (const v of layers()) v.addEventListener('loadedmetadata', placePill);
   for (const img of slides) img.addEventListener('load', placePill);
   window.addEventListener('resize', placePill, { passive: true });
   window.addEventListener('orientationchange', () => setTimeout(placePill, 250));
@@ -399,9 +486,86 @@ function rollQuote() {
 /* ─────────────────────────────────────────────── the sound / horn control */
 
 function paintPill() {
-  ui.pillMain.textContent = unlocked ? 'हर्न' : 'आवाज';
-  ui.pill.title = unlocked ? 'हर्न बजाउनुहोस्' : 'आवाज खोल्न थिच्नुहोस्';
-  ui.pill.setAttribute('aria-label', ui.pill.title);
+  ui.pillMain.textContent = 'आवाज';
+  ui.pillToggle.title = unlocked ? 'आवाजको मात्रा' : 'आवाज खोल्न थिच्नुहोस्';
+  ui.pillToggle.setAttribute('aria-label', ui.pillToggle.title);
+}
+
+function currentVolume() {
+  try {
+    const saved = localStorage.getItem('nbdp:volume');
+    if (saved !== null) return Number(saved);
+  } catch {
+    /* private mode */
+  }
+  return config?.volume ?? 70;
+}
+
+function paintVolume(value) {
+  ui.pillVol.value = String(value);
+  ui.pillVol.style.setProperty('--pct', `${value}%`);
+}
+
+function applyVolume(value, remember = true) {
+  const v = Math.min(100, Math.max(0, Math.round(value)));
+  paintVolume(v);
+  if (playerReady) {
+    player.setVolume(v);
+    if (v > 0 && player.isMuted()) player.unMute();
+  }
+  document.body.classList.toggle('muted', v === 0 || (playerReady && player.isMuted()));
+  if (remember) {
+    try {
+      localStorage.setItem('nbdp:volume', String(v));
+    } catch {
+      /* private mode */
+    }
+  }
+}
+
+function toggleMute() {
+  if (!playerReady) return;
+  if (player.isMuted() || player.getVolume() === 0) {
+    player.unMute();
+    const restore = currentVolume() || 60;
+    applyVolume(restore);
+  } else {
+    player.mute();
+    document.body.classList.add('muted');
+  }
+}
+
+/* ─────────────────────────────────────────────── the passenger ticket */
+
+const TICKET_FARE = 'रु. ६५०';        // placeholder — edit freely
+const SEAT_ROWS = ['क', 'ख', 'ग', 'घ'];
+
+// One seat per visit, so reopening the ticket does not reshuffle it.
+const seatNumber = `${SEAT_ROWS[Math.floor(Math.random() * SEAT_ROWS.length)]}${ne(Math.floor(Math.random() * 12) + 1)}`;
+
+function paintTicket() {
+  $('#ticket-heading').textContent = config.title;
+  $('#ticket-route').textContent = config.subtitle;
+  $('#ticket-plate').textContent = config.plate || '—';
+  $('#ticket-seat').textContent = seatNumber;
+  $('#ticket-fare').textContent = TICKET_FARE;
+
+  const bs = ui.dateBs.textContent;
+  const ad = ui.dateAd.textContent;
+  $('#ticket-date').textContent = bs ? `${bs} · ${ad}` : ad;
+}
+
+let ticketReturnFocus = null;
+function openTicket() {
+  paintTicket();
+  ticketReturnFocus = document.activeElement;
+  ui.ticketSheet.hidden = false;
+  ui.ticketClose.focus();
+}
+
+function closeTicket() {
+  ui.ticketSheet.hidden = true;
+  ticketReturnFocus?.focus?.();
 }
 
 /* ─────────────────────────────────────────────── who else is listening */
@@ -431,12 +595,17 @@ async function pingPresence() {
     // Without a store there is no cross-visitor count; you are the one we know of.
     const count = body.live && body.count ? body.count : 1;
     if (count !== lastCount) {
-      if (lastCount !== null) rollQuote();
+      if (lastCount !== null) {
+        rollQuote();
+        ui.aboardN.classList.remove('bump');
+        void ui.aboardN.offsetWidth;
+        ui.aboardN.classList.add('bump');
+      }
       lastCount = count;
     }
-    ui.aboardN.textContent = ne(count);
+    ui.aboardN.textContent = String(count);
   } catch {
-    ui.aboardN.textContent = ne(1);
+    ui.aboardN.textContent = String(lastCount ?? 1);
   }
 }
 
@@ -466,19 +635,10 @@ function createPlayer() {
 
 function onPlayerReady() {
   playerReady = true;
-  player.setVolume(startingVolume());
+  player.setVolume(currentVolume());
+  paintVolume(currentVolume());
   if (config.shuffle) player.setShuffle(true);
   startMusic();
-}
-
-function startingVolume() {
-  try {
-    const saved = localStorage.getItem('nbdp:volume');
-    if (saved !== null) return Number(saved);
-  } catch {
-    /* private mode */
-  }
-  return config.volume;
 }
 
 let pollTimer = null;
@@ -564,7 +724,7 @@ function startMusic() {
   if (!playerReady || !config.playlistId) return;
   try {
     player.unMute();
-    player.setVolume(startingVolume());
+    player.setVolume(currentVolume());
     play();
   } catch (err) {
     console.error(err);
@@ -590,7 +750,7 @@ function startMusic() {
     const list = player?.getPlaylist?.();
     if (!list || !list.length) {
       toast(
-        `प्लेलिस्ट <code>${config.playlistId}</code> बाट केही आएन। YouTube का आईडी प्रायः ३४ अक्षरका हुन्छन् — <a href="/garage">ग्यारेजमा</a> जाँच्नुहोस्।`,
+        `प्लेलिस्ट <code>${config.playlistId}</code> बाट केही आएन — निजी वा खाली हुन सक्छ। <a href="/garage">ग्यारेजमा</a> जाँच्नुहोस्।`,
         0
       );
     }
@@ -620,7 +780,7 @@ function unlock() {
 
   try {
     player.unMute();
-    player.setVolume(startingVolume());
+    player.setVolume(currentVolume());
     if (player.getPlayerState() !== YT.PlayerState.PLAYING) play();
   } catch (err) {
     console.error(err);
@@ -638,19 +798,31 @@ function togglePlay() {
 
 function nudgeVolume(delta) {
   if (!playerReady) return;
-  const next = Math.min(100, Math.max(0, player.getVolume() + delta));
-  player.setVolume(next);
-  try {
-    localStorage.setItem('nbdp:volume', String(next));
-  } catch {
-    /* private mode */
-  }
+  applyVolume(player.getVolume() + delta);
 }
 
 function wireControls() {
-  ui.pill.addEventListener('click', () => {
-    if (!unlocked) return; // the window listener handles the unlock
-    honk();
+  // Before sound is unlocked the whole pill is just the unlock prompt; the
+  // window-level gesture listener does that work, so these stay quiet.
+  ui.pillToggle.addEventListener('click', () => {
+    if (!unlocked) return;
+    ui.pill.classList.toggle('open');
+    ui.pillVol.hidden = false;
+    if (ui.pill.classList.contains('open')) ui.pillVol.focus();
+  });
+
+  ui.pillMute.addEventListener('click', () => {
+    if (!unlocked) return;
+    toggleMute();
+  });
+
+  ui.pillVol.addEventListener('input', () => applyVolume(Number(ui.pillVol.value)));
+
+  ui.ticket.addEventListener('click', openTicket);
+  ui.ticketClose.addEventListener('click', closeTicket);
+  ui.ticketBack.addEventListener('click', closeTicket);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !ui.ticketSheet.hidden) closeTicket();
   });
   ui.quoteRefresh.addEventListener('click', rollQuote);
   ui.mascot.addEventListener('click', honk);
@@ -697,7 +869,8 @@ function wireControls() {
       case 'KeyH': honk(); break;
       case 'KeyS': ui.shuffle.click(); break;
       case 'KeyF': ui.fs.click(); break;
-      case 'KeyM': playerReady && (player.isMuted() ? player.unMute() : player.mute()); break;
+      case 'KeyM': toggleMute(); break;
+      case 'KeyT': ui.ticketSheet.hidden ? openTicket() : closeTicket(); break;
       default: break;
     }
   });
@@ -706,7 +879,7 @@ function wireControls() {
 /* ─────────────────────────────────────────────── boot */
 
 function paintText() {
-  document.title = config.title || 'बस ड्राइवर';
+  document.title = config.title || 'ड्राइभर दाइ';
   ui.brandTitle.textContent = config.title;
   ui.heroTitle.textContent = config.title;
   ui.brandRoute.textContent = config.subtitle;
@@ -715,6 +888,7 @@ function paintText() {
   ui.heroSub.textContent = config.marquee;
   ui.shuffle.setAttribute('aria-pressed', String(Boolean(config.shuffle)));
   paintPill();
+  paintVolume(currentVolume());
   rollQuote();
 }
 
@@ -743,6 +917,7 @@ async function boot() {
 
   if (slides.length) showSlide(0);
   if (stage.video.src) stage.video.play().catch(() => {});
+  if (stage.video2.src && liveLayer === 1) stage.video2.play().catch(() => {});
   watchPillSpot();
 
   if (!config.playlistId) {
