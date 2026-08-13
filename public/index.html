@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#100d0b">
-<title>बस ड्राइवर</title>
+<title>ड्राइभर दाइ</title>
 <meta name="description" content="राति भरि राजमार्गमा — नेपाली बस ड्राइभरको प्लेलिस्ट।">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🚌</text></svg>">
 <link rel="preconnect" href="https://www.youtube.com">
@@ -17,7 +17,8 @@
 <div id="stage" aria-hidden="true">
   <div id="bgblur"></div>
   <div id="frames"></div>
-  <video id="bgvideo" muted playsinline loop preload="auto"></video>
+  <video id="bgvideo" class="bgv" muted playsinline preload="auto"></video>
+  <video id="bgvideo2" class="bgv" muted playsinline preload="none"></video>
   <div id="grain"></div>
   <div id="scrim"></div>
   <div id="vignette"></div>
@@ -32,7 +33,7 @@
         <svg viewBox="0 0 24 24"><path d="M4 16V6a2 2 0 012-2h12a2 2 0 012 2v10h1v2h-2v1a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H8v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1H3v-2zM6 7v4h5V7zm7 0v4h5V7zM7 13.2a1.3 1.3 0 100 2.6 1.3 1.3 0 000-2.6zm10 0a1.3 1.3 0 100 2.6 1.3 1.3 0 000-2.6z"/></svg>
       </span>
       <span class="brand-copy">
-        <strong id="brand-title">बस ड्राइवर</strong>
+        <strong id="brand-title">ड्राइभर दाइ</strong>
         <span id="brand-route" class="route"></span>
       </span>
       <span class="plate" id="plate" title="गाडी नम्बर"></span>
@@ -43,7 +44,7 @@
       <p class="aboard">
         <i class="dot" aria-hidden="true"></i>
         <strong id="aboard-n">१</strong>
-        <span class="aboard-label">सवार · LIVE</span>
+        <span class="aboard-label">ABOARD</span>
       </p>
     </div>
   </header>
@@ -51,7 +52,7 @@
   <!-- ── middle ─────────────────────────────────────────────── -->
   <main class="hero">
     <p class="eyebrow" id="eyebrow"><span id="date-bs"></span><span id="date-ad"></span></p>
-    <h1 class="hero-title" id="hero-title">बस ड्राइवर</h1>
+    <h1 class="hero-title" id="hero-title">ड्राइभर दाइ</h1>
     <p class="hero-rule"><span id="hero-sub">राति भरि राजमार्गमा</span></p>
 
     <div class="quote-wrap">
@@ -110,6 +111,9 @@
         <button id="shuffle" type="button" aria-pressed="false" aria-label="बेतरतिब">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l4 4-4 4V8h-2.5l-2 3-1.2-1.8L13.4 6H17zM3 6h4.6l7 10H17v-3l4 4-4 4v-3h-3.4l-7-10H3zm0 12h4.6l2-2.9 1.2 1.8-2.2 3.1H3z"/></svg>
         </button>
+        <button id="ticket" type="button" aria-label="यात्रु टिकट">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 012-2h14a2 2 0 012 2v2.2a2.8 2.8 0 000 5.6V17a2 2 0 01-2 2H5a2 2 0 01-2-2v-2.2a2.8 2.8 0 000-5.6zm6.5-.5v11h1.4v-11zm3.6 1.6v1.5h4.4V8.1zm0 3.2v1.5h4.4v-1.5z"/></svg>
+        </button>
         <button id="fs" type="button" aria-label="पूरा स्क्रिन">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5v2H6v3zm11-5h5v5h-2V6h-3zM4 15h2v3h3v2H4zm14 0h2v5h-5v-2h3z"/></svg>
         </button>
@@ -119,12 +123,43 @@
 
 </div>
 
-<button class="pill" id="pill" type="button" hidden>
-  <span class="pill-badge" aria-hidden="true">
-    <svg viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm13.5 2a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4zM14 2.2v2.1a7.8 7.8 0 010 15.4v2.1a9.9 9.9 0 000-19.6z"/></svg>
-  </span>
-  <span id="pill-main" class="pill-copy">आवाज</span>
-</button>
+<div class="pill" id="pill" hidden>
+  <button class="pill-badge" id="pill-mute" type="button" aria-label="आवाज बन्द वा चालु">
+    <svg class="i-loud" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm13.5 2a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4zM14 2.2v2.1a7.8 7.8 0 010 15.4v2.1a9.9 9.9 0 000-19.6z"/></svg>
+    <svg class="i-mute" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm18.3-1.3-1.4-1.4L17 10.2l-2.9-2.9-1.4 1.4 2.9 2.9-2.9 2.9 1.4 1.4 2.9-2.9 2.9 2.9 1.4-1.4-2.9-2.9z"/></svg>
+  </button>
+  <button class="pill-label" id="pill-toggle" type="button">
+    <span id="pill-main">आवाज</span>
+  </button>
+  <input class="pill-vol" id="pill-vol" type="range" min="0" max="100" step="1" hidden aria-label="आवाजको मात्रा">
+</div>
+
+<!-- ── passenger ticket ─────────────────────────────────────── -->
+<div class="sheet" id="ticket-sheet" hidden>
+  <div class="sheet-back" id="ticket-back"></div>
+  <div class="ticket" role="dialog" aria-modal="true" aria-labelledby="ticket-heading">
+    <button class="ticket-close" id="ticket-close" type="button" aria-label="बन्द गर्नुहोस्">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7l1.4-1.4 6.3 6.3 6.3-6.3z"/></svg>
+    </button>
+
+    <div class="ticket-top">
+      <p class="ticket-kicker">यात्रु टिकट · PASSENGER TICKET</p>
+      <h2 class="ticket-name" id="ticket-heading">ड्राइभर दाइ</h2>
+      <p class="ticket-route" id="ticket-route"></p>
+    </div>
+
+    <div class="ticket-rip" aria-hidden="true"></div>
+
+    <dl class="ticket-grid">
+      <div><dt>गाडी नं · PLATE</dt><dd id="ticket-plate"></dd></div>
+      <div><dt>सिट · SEAT</dt><dd id="ticket-seat"></dd></div>
+      <div><dt>मिति · DATE</dt><dd id="ticket-date"></dd></div>
+      <div><dt>भाडा · FARE</dt><dd id="ticket-fare"></dd></div>
+    </dl>
+
+    <p class="ticket-foot">शुभ यात्रा · भाडा तिरेर मात्र यात्रा गर्नुहोस्</p>
+  </div>
+</div>
 
 <div id="toast" role="status" aria-live="polite"></div>
 

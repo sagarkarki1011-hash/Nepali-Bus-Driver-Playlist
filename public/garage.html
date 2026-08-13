@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Garage · बस ड्राइवर</title>
+<title>Garage · ड्राइभर दाइ</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🔧</text></svg>">
 <link rel="stylesheet" href="/assets/garage.css">
 </head>
@@ -117,9 +117,10 @@
         </div>
 
         <div id="pane-video" hidden>
-          <label for="video-url">Video URL (MP4 or WebM, https://)</label>
-          <input id="video-url" type="url" placeholder="https://…/ride.mp4" spellcheck="false">
-          <p class="hint">Plays muted on loop behind the music. Host it somewhere with range requests — Blob, R2 or S3 all work.</p>
+          <label for="video-url">Background clips — one URL per line</label>
+          <textarea id="video-url" rows="4" spellcheck="false"
+                    placeholder="/frames/road1.mp4&#10;/frames/road2.mp4&#10;/frames/road3.mp4"></textarea>
+          <p class="hint">Played in order then round again, muted, cropped to fill. One line loops on its own. The next clip loads while the current one plays.</p>
         </div>
       </section>
 
