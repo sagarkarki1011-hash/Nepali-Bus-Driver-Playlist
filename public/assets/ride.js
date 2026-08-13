@@ -17,6 +17,7 @@ const ui = {
   dateBs: $('#date-bs'),
   dateAd: $('#date-ad'),
   hornSpot: $('#horn-spot'),
+  quote: $('#quote'),
 
   eyebrow: $('#eyebrow'),
   heroTitle: $('#hero-title'),
@@ -331,6 +332,47 @@ function watchHornSpot() {
   placeHorn();
 }
 
+/* ─────────────────────────────────────────────── tailgate quotes */
+
+// Edit freely — one is drawn at random whenever the song or the listener
+// count changes.
+const QUOTES = [
+  'गाडी चल्छ डिजेलले, ड्राइभर चल्छ मायाले।',
+  'गाडी मेरो, बाटो सरकारको।',
+  'साइड देऊ, सपना बोकेर हिँडेको छु।',
+  'माया गर्नु, ओभरटेक नगर्नु।',
+  'गाडी पुरानो होला, ड्राइभर होइन।',
+  'जसलाई हतार छ, ऊ अगाडि जाओस्।',
+  'साइड माग्ने धेरै, दिने कोही छैन।',
+  'ड्राइभरको हातमा स्टेयरिङ, भाग्य भगवानको हातमा।',
+  'जिन्दगीमा ब्रेक पनि चाहिन्छ।',
+  'हर्न बजाऊ, बाटो तिम्रो बाउको होइन।',
+  'बिस्तारै हिँड, घरमा कोही पर्खिरहेको छ।',
+  'ओभरटेक नगर, इज्जत जाला।',
+  'हर्न नबजाऊ, ड्राइभर निदाएको छैन।',
+  'टाढा जानु छ भने धैर्य गर।',
+  'पछाडि हेर्नु पर्दैन, अगाडि आउनुहोस्।',
+  'हर्न बजाएर होइन, मन जितेर अगाडि बढ।',
+  'यो बस होइन, जिन्दगीको यात्रा हो।',
+  'पैसा कम, यात्रु धेरै।',
+  'ड्राइभरलाई नजिस्काऊ, गन्तव्य टाढा छ।',
+  'गाडी चल्छ डिजेलले, जिन्दगी चल्छ मायाले।'
+];
+
+let lastQuote = -1;
+function rollQuote() {
+  if (QUOTES.length === 0) return;
+
+  let pick = Math.floor(Math.random() * QUOTES.length);
+  if (QUOTES.length > 1 && pick === lastQuote) pick = (pick + 1) % QUOTES.length;
+  lastQuote = pick;
+
+  ui.quote.textContent = QUOTES[pick];
+  ui.quote.classList.remove('fresh');
+  void ui.quote.offsetWidth; // restart the fade rather than skip it
+  ui.quote.classList.add('fresh');
+}
+
 /* ─────────────────────────────────────────────── the pill */
 
 const SLOGANS = [
@@ -381,6 +423,7 @@ function sessionId() {
   }
 }
 
+let lastCount = null;
 async function pingPresence() {
   try {
     const res = await fetch('/api/presence', {
@@ -390,7 +433,12 @@ async function pingPresence() {
     });
     const body = await res.json();
     // Without a store there is no cross-visitor count; you are the one we know of.
-    ui.aboardN.textContent = ne(body.live && body.count ? body.count : 1);
+    const count = body.live && body.count ? body.count : 1;
+    if (count !== lastCount) {
+      if (lastCount !== null) rollQuote();
+      lastCount = count;
+    }
+    ui.aboardN.textContent = ne(count);
   } catch {
     ui.aboardN.textContent = ne(1);
   }
@@ -447,9 +495,14 @@ function onPlayerState(event) {
   if (playing) pollTimer = setInterval(refreshProgress, 500);
 }
 
+let lastVideoId = null;
 function refreshNowPlaying() {
   try {
     const data = player?.getVideoData?.();
+    if (data?.video_id && data.video_id !== lastVideoId) {
+      lastVideoId = data.video_id;
+      rollQuote();
+    }
     if (data?.title) {
       ui.track.textContent = data.title;
       ui.artist.textContent = data.author || '';
@@ -667,6 +720,7 @@ function paintText() {
   ui.heroSub.textContent = config.marquee;
   ui.shuffle.setAttribute('aria-pressed', String(Boolean(config.shuffle)));
   paintSlogan();
+  rollQuote();
 }
 
 async function boot() {

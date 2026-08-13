@@ -1,10 +1,10 @@
 // The one place defaults live. The API imports this to fill gaps in a stored
 // config, and the ride imports it directly if /api/config is unreachable.
 export const DEFAULT_CONFIG = {
-  title: 'बस ड्राइवर',
+  title: 'नेपाल यातायात',
   subtitle: 'Morang — Kathmandu',
   plate: 'MA 1 KHA 6969',
-  marquee: 'राति भरि राजमार्गमा',
+  marquee: 'जय पशुपतिनाथ',
   playlistId: 'PLJDMn5uExVKg',
   shuffle: true,
   volume: 70,
