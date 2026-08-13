@@ -21,9 +21,8 @@ const el = {
   title: $('#title'),
   subtitle: $('#subtitle'),
   marquee: $('#marquee'),
-  chSignboard: $('#ch-signboard'),
-  chTassels: $('#ch-tassels'),
   chVignette: $('#ch-vignette'),
+  chFill: $('#ch-fill'),
 
   hold: $('#hold'),
   holdOut: $('#hold-out'),
@@ -155,9 +154,8 @@ function paint() {
   el.title.value = state.title;
   el.subtitle.value = state.subtitle;
   el.marquee.value = state.marquee;
-  el.chSignboard.checked = state.chrome.signboard;
-  el.chTassels.checked = state.chrome.tassels;
   el.chVignette.checked = state.chrome.vignette;
+  el.chFill.checked = state.chrome.fillScreen;
 
   const mode = $(`input[name="mode"][value="${state.motion.mode}"]`);
   if (mode) mode.checked = true;
@@ -217,9 +215,8 @@ function bindInputs() {
   }
 
   for (const [node, key] of [
-    [el.chSignboard, 'signboard'],
-    [el.chTassels, 'tassels'],
-    [el.chVignette, 'vignette']
+    [el.chVignette, 'vignette'],
+    [el.chFill, 'fillScreen']
   ]) {
     node.addEventListener('change', () => set(() => (state.chrome[key] = node.checked)));
   }
