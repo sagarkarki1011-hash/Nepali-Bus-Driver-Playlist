@@ -25,9 +25,10 @@ export const DEFAULT_CONFIG = {
   },
   chrome: {
     vignette: true,
-    // Portrait phones are far taller than a 16:9 clip is. false shows the whole
-    // frame over a blurred backdrop; true crops it to fill the screen edge to edge.
-    fillScreen: false
+    // Portrait phones are far taller than a 16:9 clip is, so one has to give:
+    // true fills the screen edge to edge and crops the sides to about a quarter
+    // of the frame; false shows the whole frame over a blurred backdrop instead.
+    fillScreen: true
   }
 };
 
