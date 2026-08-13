@@ -41,7 +41,7 @@ html, body {
 
 #frames { position: absolute; inset: 0; }
 
-#frames img, #bgvideo {
+#frames img, .bgv {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -57,8 +57,9 @@ html, body {
   -webkit-user-drag: none;
 }
 
-#bgvideo { opacity: 0; transition: opacity 900ms ease; }
-#bgvideo.on { opacity: 1; }
+/* Two layers so the next clip can be primed and faded in without a black gap. */
+.bgv { opacity: 0; transition: opacity 700ms ease; }
+.bgv.on { opacity: 1; }
 
 /* Fills the letterbox bands on portrait screens with a blurred copy of the scene. */
 #bgblur {
@@ -209,7 +210,20 @@ html, body {
   color: var(--muted);
   letter-spacing: 0.14em;
 }
-.aboard strong { color: var(--cream); font-weight: 700; }
+.aboard strong {
+  color: var(--cream);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+}
+.aboard strong.bump { animation: bump 620ms cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes bump {
+  0% { transform: translateY(0); opacity: 1; }
+  35% { transform: translateY(-6px); opacity: 0; }
+  36% { transform: translateY(6px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.aboard-label { letter-spacing: 0.24em; }
 
 .dot {
   width: 7px;
@@ -590,9 +604,9 @@ body.playing .ctrls .play .i-pause { display: block; }
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 5px 13px 5px 5px;
-  min-height: 36px;
-  max-width: 62vw;
+  padding: 5px 8px 5px 5px;
+  min-height: 40px;
+  max-width: min(78vw, 320px);
   overflow: visible; /* buttons clip pseudo-elements; the hit overhang needs out */
   border: 1px solid rgba(244, 236, 224, 0.18);
   border-radius: 999px;
@@ -603,14 +617,6 @@ body.playing .ctrls .play .i-pause { display: block; }
   cursor: pointer;
   transition: border-color 200ms ease, background 200ms ease, transform 140ms ease;
 }
-/* Kept visually small as asked, but the tappable box is pushed back out to the
-   44px minimum with a transparent overhang. */
-.pill::after {
-  content: "";
-  position: absolute;
-  inset: -6px -4px;
-}
-
 .pill:hover, .pill:focus-visible { border-color: var(--amber); background: rgba(28, 22, 17, 0.94); }
 .pill:active { transform: scale(0.95); }
 .pill.calling { animation: breathe 2.4s ease-in-out infinite; border-color: rgba(240, 166, 64, 0.5); }
@@ -621,20 +627,207 @@ body.playing .ctrls .play .i-pause { display: block; }
   display: grid;
   place-items: center;
   flex: none;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: rgba(244, 236, 224, 0.1);
 }
+.pill-badge {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
 .pill-badge svg { width: 14px; height: 14px; fill: var(--amber); }
+.pill-badge .i-mute { display: none; }
+body.muted .pill-badge .i-loud { display: none; }
+body.muted .pill-badge .i-mute { display: block; }
+body.muted .pill-badge svg { fill: var(--muted); }
 
-.pill-copy {
+/* The slider only takes up room once the pill is opened. */
+.pill-vol {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0;
+  height: 18px;
+  margin: 0;
+  opacity: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: width 260ms ease, opacity 200ms ease, margin 260ms ease;
+}
+.pill.open .pill-vol { width: clamp(72px, 26vw, 130px); margin-right: 6px; opacity: 1; }
+.pill-vol::-webkit-slider-runnable-track {
+  height: 3px; border-radius: 2px;
+  background: linear-gradient(to right, var(--amber) var(--pct, 70%), rgba(244,236,224,0.25) var(--pct, 70%));
+}
+.pill-vol::-moz-range-track {
+  height: 3px; border-radius: 2px;
+  background: linear-gradient(to right, var(--amber) var(--pct, 70%), rgba(244,236,224,0.25) var(--pct, 70%));
+}
+.pill-vol::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 11px; height: 11px; margin-top: -4px;
+  border-radius: 50%; background: var(--cream);
+}
+.pill-vol::-moz-range-thumb {
+  width: 11px; height: 11px; border: 0; border-radius: 50%; background: var(--cream);
+}
+
+.pill-label {
+  padding: 10px 6px; /* keeps the tap box a sensible height while staying compact */
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.pill-label span, .pill-copy {
   font-size: clamp(0.62rem, 2.5vw, 0.74rem);
   font-weight: 600;
   letter-spacing: 0.04em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ══════════════ passenger ticket ══════════════ */
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.sheet-back {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 4, 3, 0.72);
+  backdrop-filter: blur(5px);
+  animation: fade-in 260ms ease both;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.ticket {
+  position: relative;
+  width: min(100%, 25rem);
+  max-height: 88dvh;
+  overflow: auto;
+  padding: clamp(20px, 5vw, 30px);
+  border: 1px solid rgba(240, 166, 64, 0.34);
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(240, 166, 64, 0.13), transparent 70%),
+    #191310;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.65);
+  animation: ticket-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ticket-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.ticket-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 180ms ease, background 180ms ease;
+}
+.ticket-close svg { width: 15px; height: 15px; fill: currentColor; }
+.ticket-close:hover, .ticket-close:focus-visible {
+  opacity: 1; color: var(--cream); background: rgba(244, 236, 224, 0.1);
+}
+
+.ticket-top { text-align: center; padding-right: 28px; }
+.ticket-kicker {
+  margin: 0;
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: var(--amber);
+  opacity: 0.9;
+}
+.ticket-name {
+  margin: 10px 0 0;
+  font-size: clamp(1.4rem, 6vw, 1.85rem);
+  font-weight: 800;
+  line-height: 1.2;
+}
+.ticket-route {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+}
+
+/* The torn perforation across the middle. */
+.ticket-rip {
+  position: relative;
+  height: 22px;
+  margin: 20px -clamp(20px, 5vw, 30px);
+  margin-inline: calc(clamp(20px, 5vw, 30px) * -1);
+  background-image: radial-gradient(circle at 6px 50%, transparent 5px, rgba(240, 166, 64, 0.3) 5px, rgba(240, 166, 64, 0.3) 6px, transparent 6px);
+  background-size: 14px 22px;
+  background-repeat: repeat-x;
+}
+.ticket-rip::before, .ticket-rip::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: rgba(6, 4, 3, 0.95);
+}
+.ticket-rip::before { left: -10px; }
+.ticket-rip::after { right: -10px; }
+
+.ticket-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 14px;
+  margin: 0;
+}
+.ticket-grid dt {
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+.ticket-grid dd {
+  margin: 5px 0 0;
+  font-size: clamp(0.9rem, 3.6vw, 1.05rem);
+  font-weight: 700;
+  color: #f6dcae;
+  overflow-wrap: anywhere;
+}
+
+.ticket-foot {
+  margin: 22px 0 0;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(244, 236, 224, 0.16);
+  text-align: center;
+  font-size: 0.66rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket, .sheet-back { animation: none; }
+  .aboard strong.bump { animation: none; }
 }
 
 /* ══════════════ toast ══════════════ */
@@ -696,10 +889,10 @@ body.playing .ctrls .play .i-pause { display: block; }
 /* Portrait phones: a 16:9 clip cropped to fill loses most of its width. */
 @media (max-aspect-ratio: 1/1) {
   #bgblur.on { display: block; }
-  #bgvideo, #frames img { object-fit: contain; }
+  .bgv, #frames img { object-fit: contain; }
 
   body.fill-screen #bgblur { display: none; }
-  body.fill-screen #bgvideo,
+  body.fill-screen .bgv,
   body.fill-screen #frames img { object-fit: cover; }
 }
 

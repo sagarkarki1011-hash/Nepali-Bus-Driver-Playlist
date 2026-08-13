@@ -1,7 +1,7 @@
 // The one place defaults live. The API imports this to fill gaps in a stored
 // config, and the ride imports it directly if /api/config is unreachable.
 export const DEFAULT_CONFIG = {
-  title: 'नेपाल यातायात',
+  title: 'ड्राइभर दाइ',
   subtitle: 'Morang — Kathmandu',
   plate: 'MA 1 KHA 6969',
   marquee: 'जय पशुपतिनाथ',
@@ -11,7 +11,12 @@ export const DEFAULT_CONFIG = {
   frames: [
     { url: '/frames/nepal-yatayat.png%20.PNG', alt: 'From the cab, somewhere above the valley' }
   ],
-  video: { url: '/frames/ride.mp4', enabled: true },
+  video: {
+    enabled: true,
+    // Played in order, then round again. url is the single-clip fallback.
+    sources: ['/frames/road1.mp4', '/frames/road2.mp4', '/frames/road3.mp4'],
+    url: '/frames/ride.mp4'
+  },
   motion: {
     mode: 'crossfade', // crossfade | flipbook | cut
     holdMs: 12000, // a lone frame reverses its zoom over this, so slower reads better

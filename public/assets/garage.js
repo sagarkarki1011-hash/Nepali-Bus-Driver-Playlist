@@ -173,7 +173,8 @@ function paint() {
   $(`input[name="bgmode"][value="${bg}"]`).checked = true;
   el.paneFrames.hidden = bg !== 'frames';
   el.paneVideo.hidden = bg !== 'video';
-  el.videoUrl.value = state.video.url;
+  el.videoUrl.value = (state.video.sources?.length ? state.video.sources : [state.video.url])
+    .filter(Boolean).join('\n');
 
   renderFrames();
   refreshPlaylistHint();
@@ -187,13 +188,7 @@ function refreshPlaylistHint() {
 
   const id = parsePlaylistId(raw);
   if (!id) return note(el.playlistHint, 'That is not a YouTube playlist link or ID.', 'bad');
-  if (id.length < 20) {
-    return note(
-      el.playlistHint,
-      `Reading as "${id}". Playlist IDs are usually 34 characters — this one may have been cut short when copied.`,
-      'bad'
-    );
-  }
+  // Short ids are legacy playlists and resolve fine — do not cry wolf over them.
   return note(el.playlistHint, `Reading as "${id}".`, 'good');
 }
 
@@ -255,7 +250,7 @@ function bindInputs() {
 
   for (const radio of $$('input[name="bgmode"]')) {
     radio.addEventListener('change', () => {
-      state.video.enabled = radio.value === 'video' && Boolean(state.video.url);
+      state.video.enabled = radio.value === 'video' && Boolean(state.video.url || state.video.sources?.length);
       el.paneFrames.hidden = radio.value !== 'frames';
       el.paneVideo.hidden = radio.value !== 'video';
       refreshDirty();
@@ -264,8 +259,10 @@ function bindInputs() {
   }
 
   el.videoUrl.addEventListener('input', () => {
-    state.video.url = el.videoUrl.value.trim();
-    state.video.enabled = Boolean(state.video.url) && $('input[name="bgmode"][value="video"]').checked;
+    const lines = el.videoUrl.value.split('\n').map((l) => l.trim()).filter(Boolean);
+    state.video.sources = lines;
+    state.video.url = lines[0] || '';
+    state.video.enabled = lines.length > 0 && $('input[name="bgmode"][value="video"]').checked;
     refreshDirty();
     schedulePreview();
   });
