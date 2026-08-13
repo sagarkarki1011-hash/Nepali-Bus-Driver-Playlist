@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#100d0b">
-<title>ड्राइभर दाइ</title>
+<title>नेपाल यातायात</title>
 <meta name="description" content="राति भरि राजमार्गमा — नेपाली बस ड्राइभरको प्लेलिस्ट।">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🚌</text></svg>">
 <link rel="preconnect" href="https://www.youtube.com">
@@ -33,7 +33,7 @@
         <svg viewBox="0 0 24 24"><path d="M4 16V6a2 2 0 012-2h12a2 2 0 012 2v10h1v2h-2v1a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H8v1a1 1 0 01-1 1H6a1 1 0 01-1-1v-1H3v-2zM6 7v4h5V7zm7 0v4h5V7zM7 13.2a1.3 1.3 0 100 2.6 1.3 1.3 0 000-2.6zm10 0a1.3 1.3 0 100 2.6 1.3 1.3 0 000-2.6z"/></svg>
       </span>
       <span class="brand-copy">
-        <strong id="brand-title">ड्राइभर दाइ</strong>
+        <strong id="brand-title">नेपाल यातायात</strong>
         <span id="brand-route" class="route"></span>
       </span>
       <span class="plate" id="plate" title="गाडी नम्बर"></span>
@@ -52,7 +52,7 @@
   <!-- ── middle ─────────────────────────────────────────────── -->
   <main class="hero">
     <p class="eyebrow" id="eyebrow"><span id="date-bs"></span><span id="date-ad"></span></p>
-    <h1 class="hero-title" id="hero-title">ड्राइभर दाइ</h1>
+    <h1 class="hero-title" id="hero-title">नेपाल यातायात</h1>
     <p class="hero-rule"><span id="hero-sub">राति भरि राजमार्गमा</span></p>
 
     <div class="quote-wrap">
@@ -108,6 +108,20 @@
 
         <span class="ctrls-gap"></span>
 
+        <button id="vol" type="button" aria-label="आवाजको मात्रा" aria-expanded="false" aria-controls="vol-pop">
+          <svg class="i-loud" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm13.5 2a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4zM14 2.2v2.1a7.8 7.8 0 010 15.4v2.1a9.9 9.9 0 000-19.6z"/></svg>
+          <svg class="i-mute" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm18.3-1.3-1.4-1.4L17 10.2l-2.9-2.9-1.4 1.4 2.9 2.9-2.9 2.9 1.4 1.4 2.9-2.9 2.9 2.9 1.4-1.4-2.9-2.9z"/></svg>
+        </button>
+
+        <div class="vol-pop" id="vol-pop" hidden>
+          <button class="vol-mute" id="vol-mute" type="button" aria-label="आवाज बन्द वा चालु">
+            <svg class="i-loud" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm13.5 2a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4z"/></svg>
+            <svg class="i-mute" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm18.3-1.3-1.4-1.4L17 10.2l-2.9-2.9-1.4 1.4 2.9 2.9-2.9 2.9 1.4 1.4 2.9-2.9 2.9 2.9 1.4-1.4-2.9-2.9z"/></svg>
+          </button>
+          <input class="vol-range" id="vol-range" type="range" min="0" max="100" step="1" aria-label="आवाजको मात्रा">
+          <output class="vol-out" id="vol-out">70</output>
+        </div>
+
         <button id="shuffle" type="button" aria-pressed="false" aria-label="बेतरतिब">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l4 4-4 4V8h-2.5l-2 3-1.2-1.8L13.4 6H17zM3 6h4.6l7 10H17v-3l4 4-4 4v-3h-3.4l-7-10H3zm0 12h4.6l2-2.9 1.2 1.8-2.2 3.1H3z"/></svg>
         </button>
@@ -123,16 +137,13 @@
 
 </div>
 
-<div class="pill" id="pill" hidden>
-  <button class="pill-badge" id="pill-mute" type="button" aria-label="आवाज बन्द वा चालु">
-    <svg class="i-loud" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm13.5 2a4.5 4.5 0 00-2.5-4v8a4.5 4.5 0 002.5-4zM14 2.2v2.1a7.8 7.8 0 010 15.4v2.1a9.9 9.9 0 000-19.6z"/></svg>
-    <svg class="i-mute" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4a1 1 0 001 1h2l4 4V5L6 9H4a1 1 0 00-1 1zm18.3-1.3-1.4-1.4L17 10.2l-2.9-2.9-1.4 1.4 2.9 2.9-2.9 2.9 1.4 1.4 2.9-2.9 2.9 2.9 1.4-1.4-2.9-2.9z"/></svg>
-  </button>
-  <button class="pill-label" id="pill-toggle" type="button">
-    <span id="pill-main">आवाज</span>
-  </button>
-  <input class="pill-vol" id="pill-vol" type="range" min="0" max="100" step="1" hidden aria-label="आवाजको मात्रा">
-</div>
+<!-- Parked over the driver's shoulder by placePill(), on the footage itself. -->
+<button class="pill" id="pill" type="button" hidden aria-label="हर्न बजाउनुहोस्">
+  <span class="pill-badge" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path d="M18.6 3.6a1 1 0 00-1.6-.8L9.5 8.1H5.2A2.2 2.2 0 003 10.3v3.4a2.2 2.2 0 002.2 2.2h.7l1.4 4.4a1 1 0 001 .7h1.5a1 1 0 001-1.3l-1.2-3.8h.9l7.5 5.3a1 1 0 001.6-.8z"/></svg>
+  </span>
+  <span class="pill-copy" id="pill-main">हर्न</span>
+</button>
 
 <!-- ── passenger ticket ─────────────────────────────────────── -->
 <div class="sheet" id="ticket-sheet" hidden>
@@ -144,7 +155,7 @@
 
     <div class="ticket-top">
       <p class="ticket-kicker">यात्रु टिकट · PASSENGER TICKET</p>
-      <h2 class="ticket-name" id="ticket-heading">ड्राइभर दाइ</h2>
+      <h2 class="ticket-name" id="ticket-heading">नेपाल यातायात</h2>
       <p class="ticket-route" id="ticket-route"></p>
     </div>
 
