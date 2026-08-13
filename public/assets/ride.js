@@ -445,6 +445,10 @@ function placePill() {
   const media = activeMedia();
   if (!media) return;
 
+  // Reveal before measuring: a hidden element has no width, and the overlap
+  // test below needs a real one.
+  ui.pill.hidden = false;
+
   // Assume widescreen until the real dimensions arrive, so the horn is never
   // simply missing — placeHorn runs again on loadedmetadata with exact numbers.
   const natW = media.videoWidth || media.naturalWidth || 16;
@@ -461,19 +465,50 @@ function placePill() {
   const gapRight = Math.max(0, (cw - natW * scale) / 2);
   const gapBottom = Math.max(0, (ch - natH * scale) / 2);
 
-  // Never let it slide under the player bar — nor, on phones, under the caption
-  // block that sits at the foot of the screen with it.
-  const blockers = [document.querySelector('.player')];
-  if (matchMedia('(max-width: 719px)').matches) {
-    const caption = document.querySelector('.eyebrow');
-    if (caption?.getBoundingClientRect().height) blockers.push(caption);
-  }
-  const highest = Math.min(...blockers.map((node) => node.getBoundingClientRect().top));
+  // Cropped, the corner of the footage is the corner of the screen, so sit just
+  // inside it. Fitted, that corner has a blurred band under it — drop into the
+  // band instead, clear of the picture rather than on top of it.
+  const rest = contained
+    ? Math.max(8, gapBottom - ui.pill.offsetHeight - 8)
+    : gapBottom + 10;
+
+  // Whatever happens, never slide under the player bar or the quote above it —
+  // but only count something as in the way if it is actually beside the horn.
+  // On a wide screen the quote is a narrow column in the middle and the horn is
+  // out at the edge, so it is no obstacle at all.
+  const right = cw - (gapRight + 10);
+  const left = right - ui.pill.offsetWidth;
+  const inTheWay = [document.querySelector('.player'), document.querySelector('.quote-wrap')]
+    .map((node) => node?.getBoundingClientRect())
+    .filter((box) => box?.height && box.left < right && box.right > left);
+
+  const highest = inTheWay.length ? Math.min(...inTheWay.map((box) => box.top)) : ch;
   const floor = Math.max(0, ch - highest) + 8;
 
   ui.pill.style.right = `${Math.round(gapRight + 10)}px`;
-  ui.pill.style.bottom = `${Math.round(Math.max(gapBottom + 10, floor))}px`;
-  ui.pill.hidden = false;
+  ui.pill.style.bottom = `${Math.round(Math.max(rest, floor))}px`;
+
+  placeLede(gapBottom, contained);
+}
+
+/**
+ * Fitted framing leaves a blurred band between the header and the footage.
+ * Centre the heading block in it. Measured rather than guessed because the
+ * band's depth moves with the clip's shape and the zoom setting.
+ */
+function placeLede(gapTop, contained) {
+  const root = document.documentElement;
+  const lede = document.querySelector('.hero-lede');
+  const hero = document.querySelector('.hero');
+  const phone = matchMedia('(max-width: 719px)').matches;
+
+  if (!phone || !contained || !lede?.offsetHeight) {
+    root.style.removeProperty('--lede-top');
+    return;
+  }
+
+  const room = gapTop - hero.getBoundingClientRect().top - lede.offsetHeight;
+  root.style.setProperty('--lede-top', `${Math.max(0, Math.round(room / 2))}px`);
 }
 
 function watchPillSpot() {

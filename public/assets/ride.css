@@ -276,6 +276,18 @@ html, body {
   min-width: 0;
 }
 
+/* Full width, not shrink-to-fit: the children used to be direct flex items of
+   .hero and resolved their own widths against it, so wrapping changes if this
+   box is any narrower. */
+.hero-lede {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(6px, 1.4vh, 14px);
+  width: 100%;
+  min-width: 0;
+}
+
 .eyebrow {
   display: flex;
   align-items: center;
@@ -892,20 +904,30 @@ body.muted .vol-mute svg { fill: var(--muted); }
    44px tap minimum, only the widths breathe in and out. */
 
 @media (max-width: 719px) {
-  .mascot { display: none; }
   .ctrls-gap { display: none; }
 
-  /* On a phone the crop puts the bus's own painted signboard right where the
-     heading was, so two sets of Devanagari fought each other across the top.
-     The whole caption block moves to the foot of the screen instead: the scene
-     — mirror, garland, valley — gets the middle to itself, and the words sit
-     together in the dark band above the player where they are easiest to read. */
-  .hero {
-    justify-content: flex-end;
-    padding-top: 0;
-    gap: clamp(4px, 1vh, 10px);
+  /* Below this the mascot cannot have its 44px without squeezing a control off
+     the row, so it steps aside — the horn over the driver still honks. */
+  @media (max-width: 359px) {
+    .mascot { display: none; }
+    /* Its width goes back to the buttons rather than being left as slack. */
+    .ctrls button { width: clamp(32px, 10.5vw, 40px); }
   }
-  .quote-wrap { margin-top: clamp(6px, 1.4vh, 14px); }
+  .mascot { width: 36px; height: 36px; }
+
+  .hero { gap: clamp(4px, 1vh, 10px); }
+
+  /* Fitted framing leaves a blurred band above the footage. --lede-top parks
+     the heading in the middle of it, measured in JS because the band's depth
+     depends on the clip's shape and the zoom. */
+  .hero { padding-top: var(--lede-top, clamp(4px, 3vh, 40px)); }
+  .quote-wrap { margin-top: auto; }
+
+  /* Cropped to fill, there is no band: the bus's own painted signboard is up
+     there instead, and two sets of Devanagari fought each other across it. So
+     the whole caption block drops to the foot of the screen together. */
+  body.fill-screen .hero { justify-content: flex-end; padding-top: 0; }
+  body.fill-screen .quote-wrap { margin-top: clamp(6px, 1.4vh, 14px); }
 
   .hero-title { font-size: clamp(1.75rem, 9vw, 2.9rem); }
 
@@ -949,7 +971,7 @@ body.muted .vol-mute svg { fill: var(--muted); }
   /* A slimmer bar: it should read as a strip along the bottom rather than a
      panel taking a quarter of the screen. */
   .player {
-    gap: 8px;
+    gap: 6px;
     padding: 9px 12px 11px;
     border-radius: 16px;
   }
@@ -968,7 +990,7 @@ body.muted .vol-mute svg { fill: var(--muted); }
     justify-content: center;
     gap: clamp(2px, 1vw, 6px);
   }
-  .ctrls button { width: clamp(32px, 9.5vw, 40px); height: 40px; }
+  .ctrls button { width: clamp(30px, 9vw, 40px); height: 40px; }
   .ctrls button svg { width: clamp(16px, 4.6vw, 19px); height: clamp(16px, 4.6vw, 19px); }
   .ctrls .play {
     width: clamp(40px, 12vw, 48px);
