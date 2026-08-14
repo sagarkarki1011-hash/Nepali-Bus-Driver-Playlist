@@ -171,20 +171,20 @@ function buildStage() {
 
   stage.vignette.classList.toggle('on', Boolean(config.chrome.vignette));
 
-  // Backdrop for the letterbox bands on portrait screens. The still is the
-  // starting point; once a clip has frames, sampleBackdrop swaps in the scene
-  // that is actually on screen.
-  const backdrop = config.frames[0]?.url || '';
-  stage.blur.style.backgroundImage = backdrop
-    ? `url("${backdrop.replace(/["\\]/g, '\\$&')}")` // the path may hold spaces or quotes
-    : '';
-  stage.blur.classList.toggle('on', Boolean(backdrop));
-
   const clips = config.video.sources?.length
     ? config.video.sources
     : (config.video.url ? [config.video.url] : []);
+  const playingClips = Boolean(config.video.enabled && clips.length);
 
-  if (config.video.enabled && clips.length) {
+  // Backdrop for the letterbox bands on portrait screens. With clips running,
+  // sampleBackdrop paints it from the footage a moment later, so loading the
+  // still as well would be a megabyte or two per visitor for something that is
+  // replaced before anyone reads it. useStillBackdrop is the safety net for a
+  // device that cannot decode the video at all.
+  if (playingClips) stillBackdropLater();
+  else useStillBackdrop();
+
+  if (playingClips) {
     startClips(clips);
     return;
   }
@@ -420,6 +420,9 @@ const backdropCanvas = document.createElement('canvas');
 backdropCanvas.width = 64;
 backdropCanvas.height = 36;
 
+let backdropPainted = false;
+let stillTimer = null;
+
 function sampleBackdrop() {
   const media = activeMedia();
   if (!media) return;
@@ -430,9 +433,29 @@ function sampleBackdrop() {
     ctx.drawImage(media, 0, 0, backdropCanvas.width, backdropCanvas.height);
     stage.blur.style.backgroundImage = `url("${backdropCanvas.toDataURL('image/jpeg', 0.7)}")`;
     stage.blur.classList.add('on');
+    backdropPainted = true;
+    clearTimeout(stillTimer);
   } catch {
     /* Keep whichever backdrop is already up. */
   }
+}
+
+/** The configured still, downloaded only when it is actually going to be seen. */
+function useStillBackdrop() {
+  const still = config.frames[0]?.url || '';
+  stage.blur.style.backgroundImage = still
+    ? `url("${still.replace(/["\\]/g, '\\$&')}")` // the path may hold spaces or quotes
+    : '';
+  stage.blur.classList.toggle('on', Boolean(still));
+}
+
+/** Falls back to the still if no video frame has arrived to paint the bands. */
+function stillBackdropLater() {
+  backdropPainted = false;
+  clearTimeout(stillTimer);
+  stillTimer = setTimeout(() => {
+    if (!backdropPainted) useStillBackdrop();
+  }, 4000);
 }
 
 /** How far the fitted portrait framing zooms back in. 1 keeps the whole frame. */
@@ -1180,7 +1203,9 @@ async function boot() {
   setInterval(paintDate, 60_000);
 
   pingPresence();
-  setInterval(pingPresence, 25_000);
+  // Well inside the server's presence window, and slow enough that a busy day
+  // does not burn through a free Redis plan's monthly command allowance.
+  setInterval(pingPresence, 45_000);
 
   if (slides.length) showSlide(0);
   if (stage.video.src) stage.video.play().catch(() => {});
