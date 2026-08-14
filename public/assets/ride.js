@@ -30,6 +30,13 @@ const ui = {
   volMute: $('#vol-mute'),
   volRange: $('#vol-range'),
   volOut: $('#vol-out'),
+  queue: $('#queue'),
+  queueSheet: $('#queue-sheet'),
+  queueBack: $('#queue-back'),
+  queueClose: $('#queue-close'),
+  queueList: $('#queue-list'),
+  queueCount: $('#queue-count'),
+  queueNote: $('#queue-note'),
   ticket: $('#ticket'),
   ticketSheet: $('#ticket-sheet'),
   ticketClose: $('#ticket-close'),
@@ -655,6 +662,152 @@ function closeTicket() {
   ticketReturnFocus?.focus?.();
 }
 
+/* ─────────────────────────────────────────────── the playlist */
+
+/**
+ * The IFrame API gives us the playlist as bare video ids and the title of only
+ * the one playing. /api/tracks fills in the rest, a chunk at a time so a long
+ * playlist paints as it arrives rather than waiting on the lot.
+ */
+const CHUNK = 50;
+const titles = new Map(); // video id -> { title, author }
+let queueIds = [];
+let titlesWanted = false;
+let queueReturnFocus = null;
+
+function playlistIds() {
+  try {
+    return player?.getPlaylist?.() || [];
+  } catch {
+    return [];
+  }
+}
+
+function nowPlayingIndex() {
+  try {
+    const at = player?.getPlaylistIndex?.();
+    return Number.isInteger(at) && at >= 0 ? at : -1;
+  } catch {
+    return -1;
+  }
+}
+
+function openQueue() {
+  queueIds = playlistIds();
+  queueReturnFocus = document.activeElement;
+  ui.queueSheet.hidden = false;
+  ui.queue.setAttribute('aria-expanded', 'true');
+
+  drawQueue();
+  ui.queueClose.focus();
+  scrollToNowPlaying();
+  fetchTitles();
+}
+
+function closeQueue() {
+  ui.queueSheet.hidden = true;
+  ui.queue.setAttribute('aria-expanded', 'false');
+  queueReturnFocus?.focus?.();
+}
+
+function drawQueue() {
+  if (!queueIds.length) {
+    ui.queueList.textContent = '';
+    ui.queueCount.textContent = playerReady ? 'सूची खाली छ' : 'प्लेलिस्ट पर्खिँदै…';
+    ui.queueNote.textContent = playerReady
+      ? ''
+      : 'प्लेलिस्ट लोड भएपछि गीतहरू यहाँ देखिनेछन्।';
+    return;
+  }
+
+  ui.queueCount.textContent = `${ne(queueIds.length)} गीत · ${queueIds.length} TRACKS`;
+  ui.queueNote.textContent = '';
+
+  const at = nowPlayingIndex();
+  const rows = queueIds.map((id, i) => {
+    const known = titles.get(id);
+    const li = document.createElement('li');
+    li.className = i === at ? 'qrow now' : 'qrow';
+    li.dataset.id = id;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'qrow-btn';
+    button.dataset.index = String(i);
+
+    const n = document.createElement('span');
+    n.className = 'qrow-n';
+    // Both live in the row; CSS shows the bars only on the playing one.
+    const num = document.createElement('span');
+    num.className = 'qrow-num';
+    num.textContent = ne(i + 1);
+    const bars = document.createElement('span');
+    bars.className = 'qrow-bars';
+    bars.setAttribute('aria-hidden', 'true');
+    bars.append(document.createElement('i'), document.createElement('i'), document.createElement('i'));
+    n.append(num, bars);
+
+    const art = document.createElement('span');
+    art.className = 'qrow-art';
+    art.style.backgroundImage = `url("https://i.ytimg.com/vi/${id}/mqdefault.jpg")`;
+
+    const copy = document.createElement('span');
+    copy.className = 'qrow-copy';
+    const title = document.createElement('span');
+    title.className = 'qrow-title';
+    // textContent throughout: these strings come from YouTube, not from us.
+    title.textContent = known?.title || `गीत ${ne(i + 1)}`;
+    const by = document.createElement('span');
+    by.className = 'qrow-by';
+    by.textContent = known?.author || (known ? '' : '…');
+    copy.append(title, by);
+
+    button.append(n, art, copy);
+    li.append(button);
+    return li;
+  });
+
+  ui.queueList.replaceChildren(...rows);
+}
+
+/** Repaints just the highlight, so the list does not jump while it is open. */
+function markNowPlaying() {
+  if (ui.queueSheet.hidden) return;
+  const at = nowPlayingIndex();
+  [...ui.queueList.children].forEach((li, i) => li.classList.toggle('now', i === at));
+}
+
+function scrollToNowPlaying() {
+  const row = ui.queueList.querySelector('.qrow.now');
+  row?.scrollIntoView({ block: 'center' });
+}
+
+async function fetchTitles() {
+  if (titlesWanted || !queueIds.length) return;
+  titlesWanted = true;
+
+  const missing = queueIds.filter((id) => !titles.has(id));
+  try {
+    for (let i = 0; i < missing.length; i += CHUNK) {
+      const res = await fetch('/api/tracks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: missing.slice(i, i + CHUNK) })
+      });
+      if (!res.ok) throw new Error(`tracks ${res.status}`);
+
+      const { tracks } = await res.json();
+      for (const [id, track] of Object.entries(tracks || {})) titles.set(id, track);
+      if (!ui.queueSheet.hidden) drawQueue();
+    }
+  } catch {
+    titlesWanted = false; // let the next open try again
+    if (!ui.queueSheet.hidden && !titles.size) {
+      ui.queueNote.textContent = 'गीतका नाम ल्याउन सकिएन — तर बजाउन मिल्छ।';
+    }
+  }
+}
+
 /* ─────────────────────────────────────────────── who else is listening */
 
 function sessionId() {
@@ -754,6 +907,9 @@ function refreshNowPlaying() {
     if (data?.video_id) {
       ui.art.style.backgroundImage = `url("https://i.ytimg.com/vi/${data.video_id}/mqdefault.jpg")`;
     }
+
+    // Keep the open list pointing at the right row without redrawing it.
+    markNowPlaying();
 
   } catch {
     /* the player throws until a video is bound */
@@ -909,12 +1065,26 @@ function wireControls() {
     showVolume(false);
   });
 
+  ui.queue.addEventListener('click', () => (ui.queueSheet.hidden ? openQueue() : closeQueue()));
+  ui.queueClose.addEventListener('click', closeQueue);
+  ui.queueBack.addEventListener('click', closeQueue);
+
+  // One listener on the list rather than one per row: the list is redrawn each
+  // time titles arrive, and rebinding hundreds of rows each time is waste.
+  ui.queueList.addEventListener('click', (event) => {
+    const button = event.target.closest('.qrow-btn');
+    if (!button || !playerReady) return;
+    player.playVideoAt(Number(button.dataset.index));
+    player.playVideo();
+  });
+
   ui.ticket.addEventListener('click', openTicket);
   ui.ticketClose.addEventListener('click', closeTicket);
   ui.ticketBack.addEventListener('click', closeTicket);
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!ui.ticketSheet.hidden) closeTicket();
+    if (!ui.queueSheet.hidden) closeQueue();
     if (!ui.volPop.hidden) { showVolume(false); ui.vol.focus(); }
   });
   ui.quoteRefresh.addEventListener('click', rollQuote);
@@ -964,6 +1134,7 @@ function wireControls() {
       case 'KeyF': ui.fs.click(); break;
       case 'KeyM': toggleMute(); break;
       case 'KeyV': ui.vol.click(); break;
+      case 'KeyQ': ui.queueSheet.hidden ? openQueue() : closeQueue(); break;
       case 'KeyT': ui.ticketSheet.hidden ? openTicket() : closeTicket(); break;
       default: break;
     }
