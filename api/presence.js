@@ -1,13 +1,8 @@
 import { send, fail, readJsonBody } from '../lib/http.js';
+import { redisCreds } from '../lib/redis-env.js';
 
 const KEY = 'nbdp:live';
 const WINDOW_MS = 60_000; // a visitor counts as present for this long after a ping
-
-function redisCreds() {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  return url && token ? { url, token } : null;
-}
 
 let client = null;
 async function redis() {
