@@ -2,7 +2,16 @@ import { send, fail, readJsonBody } from '../lib/http.js';
 import { redisCreds } from '../lib/redisenv.js';
 
 const KEY = 'nbdp:live';
-const WINDOW_MS = 60_000; // a visitor counts as present for this long after a ping
+// A visitor counts as present for this long after a ping. It has to comfortably
+// exceed the client's ping interval, or someone still watching drops out of the
+// count between their own pings.
+const WINDOW_MS = 120_000;
+const KEY_TTL = 600;
+// Every ping costs Redis commands, and a free plan's monthly allowance is spent
+// per visitor-minute. The expiry only needs refreshing now and then rather than
+// on every ping — one in six keeps it far ahead of KEY_TTL while cutting a
+// quarter off the traffic.
+const EXPIRY_ODDS = 1 / 6;
 
 let client = null;
 async function redis() {
@@ -40,7 +49,7 @@ export default async function handler(req, res) {
     await db.zadd(KEY, { score: now, member: id });
     await db.zremrangebyscore(KEY, 0, now - WINDOW_MS);
     const count = await db.zcard(KEY);
-    await db.expire(KEY, 300);
+    if (Math.random() < EXPIRY_ODDS) await db.expire(KEY, KEY_TTL);
 
     return send(res, 200, { count, live: true }, { 'Cache-Control': 'no-store' });
   } catch (err) {
