@@ -1,5 +1,5 @@
 import { send, fail, readJsonBody } from '../lib/http.js';
-import { redisCreds } from '../lib/redis-env.js';
+import { redisCreds } from '../lib/redisenv.js';
 
 /**
  * Titles for a playlist.

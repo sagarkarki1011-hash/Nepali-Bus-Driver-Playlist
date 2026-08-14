@@ -1,5 +1,5 @@
 import { send, fail, readJsonBody } from '../lib/http.js';
-import { redisCreds } from '../lib/redis-env.js';
+import { redisCreds } from '../lib/redisenv.js';
 
 const KEY = 'nbdp:live';
 const WINDOW_MS = 60_000; // a visitor counts as present for this long after a ping
